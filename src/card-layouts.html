@@ -27,25 +27,34 @@ a:hover {color:#fff}
 a:focus-visible {outline:2px solid var(--review);outline-offset:2px}
 .grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
 .card {border:1px solid #151515;border-radius:7px;background:var(--card);min-width:0}
-.card h2 {display:flex;align-items:center;gap:10px;margin:0;padding:14px 17px;border-radius:6px 6px 0 0;background:var(--cap);border-bottom:1px solid #151515;font-size:clamp(15px,1.5vw,18px);font-weight:500;letter-spacing:-.02em;line-height:1.25;min-height:50px}
+.card h2 {display:flex;align-items:center;gap:10px;margin:0;padding:14px 15px;border-radius:6px 6px 0 0;background:var(--cap);border-bottom:1px solid #151515;font-size:clamp(15px,1.5vw,18px);font-weight:500;letter-spacing:-.02em;line-height:1.25;min-height:50px}
 .hint {margin-left:auto;font-size:11px;color:var(--muted);letter-spacing:0;white-space:nowrap}
-.icon {display:inline-grid;place-items:center;width:16px;flex:none;color:#bbb;font-size:16px;font-weight:600}
-.readings {padding:12px 17px;display:grid;gap:5px}
+.icon {position:relative;display:block;width:22px;height:22px;flex:none;color:#c4c4c4}
+.icon::before, .icon::after {content:"";position:absolute}
+.icon-quality::before {inset:1px;border:2px solid currentColor;border-radius:50%}
+.icon-quality::after {width:2px;height:8px;top:4px;left:10px;border-radius:2px;background:currentColor;transform:rotate(35deg);transform-origin:center bottom}
+.icon-size::before {inset:1px 3px;border:2px solid currentColor;border-radius:3px}
+.icon-size::after {top:6px;left:7px;width:8px;height:2px;border-radius:1px;background:currentColor;box-shadow:0 4px currentColor,0 8px currentColor}
+.icon-coverage::before {inset:2px 1px 1px;border:2px solid currentColor;border-radius:3px}
+.icon-coverage::after {inset:5px 5px 5px;background:linear-gradient(currentColor,currentColor) left bottom/2px 5px no-repeat,linear-gradient(currentColor,currentColor) center bottom/2px 10px no-repeat,linear-gradient(currentColor,currentColor) right bottom/2px 7px no-repeat}
+.readings {padding:12px 15px;display:grid;gap:5px}
 .reading, .language-head {display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:center;gap:10px}
 .reading {min-height:30px}
 .values, .language-head > div {display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px}
 .result, .language-head span {min-width:0;text-align:right;line-height:1.2}
+.result {display:flex;align-items:baseline;justify-content:flex-end;gap:4px}
 .language-head span {font-size:11px;font-weight:550;color:var(--muted)}
 .pass {--tone:var(--pass)}
 .review {--tone:var(--review)}
 .fail {--tone:var(--fail)}
 .missing {--tone:var(--missing)}
-.project {display:flex;align-items:center;gap:7px;color:var(--tone,var(--text))}
+.project {color:var(--tone,var(--text))}
 .value {font-size:clamp(15px,1.6vw,20px);color:var(--tone,var(--strong));font-variant-numeric:tabular-nums;white-space:nowrap}
-.mark {width:14px;flex:none;text-align:center;font-size:13px;color:var(--tone,var(--muted))}
-.counts {margin-left:5px;font-size:12px;color:var(--muted);white-space:nowrap}
-.is-both .reading, .is-both .language-head {grid-template-columns:62px minmax(0,1fr)}
-.is-both .counts {display:block;margin:2px 0 1px;font-size:10px}
+.mark {width:12px;flex:none;text-align:center;font-size:13px;color:var(--tone,var(--muted))}
+.counts {min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:12px;color:var(--muted);white-space:nowrap}
+.counts::before {content:'·';margin-right:4px}
+.is-both .reading, .is-both .language-head {grid-template-columns:52px minmax(0,1fr)}
+.is-both .counts {font-size:clamp(9px,.85vw,11px)}
 .is-both .value {font-size:clamp(13px,1.35vw,17px)}
 .footer {display:flex;justify-content:space-between;align-items:baseline;gap:8px 16px;flex-wrap:wrap;padding-top:15px;color:var(--muted);font-size:12px}
 .legend {display:flex;gap:13px;flex-wrap:wrap;list-style:none;margin:0;padding:0}
@@ -82,7 +91,7 @@ const projects = ['crysta','edi'];
 const labels = {cpp:'C++',python:'Python'};
 const metricsByLanguage = {cpp:'static',python:'python_static'};
 const analysisByLanguage = {cpp:'Clang static analysis',python:'Ruff'};
-const statusSymbols = {pass:'✓',review:'!',fail:'×',missing:'–',neutral:'·'};
+const statusSymbols = {pass:'✓',review:'!',fail:'×',missing:'–'};
 const statusLabels = {pass:'Within target',review:'Review',fail:'Failed',missing:'No report'};
 const format = new Intl.NumberFormat('en', {maximumFractionDigits:1});
 const number = value => Number.isFinite(value) ? format.format(value) : '—';
@@ -109,8 +118,8 @@ function density(project, language, report) {
   const threshold = data.demo ? data.demoTargets?.densityIncrease : data.densityReviewIncrease;
   const flag = drift != null && Number.isFinite(threshold) && drift > threshold;
   return color(number(ratio),flag?'review':'neutral',
-    'Functions per file. '+reference+(drift == null ? '' : '. Change: '+number(drift)+'%.')+(Number.isFinite(threshold) ? ' Review above a '+threshold+'% increase.' : ''),
-    '('+number(report.functions)+' / '+number(report.files)+')');
+    number(report.functions)+' functions / '+number(report.files)+' files. '+reference+(drift == null ? '' : '. Change: '+number(drift)+'%.')+(Number.isFinite(threshold) ? ' Review above a '+threshold+'% increase.' : ''),
+    number(report.functions)+'/'+number(report.files));
 }
 function complexityTarget(language) {
   return data.demo ? data.demoTargets?.complexity?.[language] : data.complexityTargets?.[language];
@@ -139,15 +148,15 @@ function coverage(sample, key) {
     number(report.covered)+' of '+number(report.total)+(Number.isFinite(target) ? '. Target ≥ '+target+'%' : ''));
 }
 const cards = [
-  {icon:'◉',name:'Code quality',help:'Clang static analysis for C++; Ruff for Python',read:(project,language,sample)=>analyzer(sample,language)},
-  {icon:'◑',name:'Maintainability index',help:'BCA · median file Visual Studio MI',read:(project,language,sample,source)=>basic(source?.mi)},
-  {icon:'⌁',name:'Cyclomatic complexity',complexity:true,help:'BCA · 90th percentile of function McCabe scores',read:(project,language,sample,source)=>complexity(language,source)},
-  {icon:'≡',name:'Physical code lines',help:'BCA · physical code lines excluding blank and comment-only lines',read:(project,language,sample,source)=>basic(source?.components?.reduce((sum,item)=>sum+item.lines,0))},
-  {icon:'§',name:'Logical lines',help:'BCA · logical lines of code',read:(project,language,sample,source)=>basic(source?.logical)},
-  {icon:'▤',name:'Functions / files',help:'Functions per file, with function and file counts in parentheses. Amber marks a rise of more than 10% from the previous measured ratio in this demo.',read:(project,language,sample,source)=>density(project,language,source)},
-  {icon:'▥',name:'C++ unit-test coverage',help:'LLVM · instrumented C++ unit tiers',fixed:'coverage'},
-  {icon:'▥',name:'Python test coverage',help:'crysta public API entries · edi statements in lib/edi',fixed:'python'},
-  {icon:'¶',name:'C++ API documentation',help:'Doxygen · documented public header symbols',fixed:'docs'},
+  {icon:'quality',name:'Code quality',help:'Clang static analysis for C++; Ruff for Python',read:(project,language,sample)=>analyzer(sample,language)},
+  {icon:'quality',name:'Maintainability index',help:'BCA · median file Visual Studio MI',read:(project,language,sample,source)=>basic(source?.mi)},
+  {icon:'quality',name:'Cyclomatic complexity',complexity:true,help:'BCA · 90th percentile of function McCabe scores',read:(project,language,sample,source)=>complexity(language,source)},
+  {icon:'size',name:'Physical code lines',help:'BCA · physical code lines excluding blank and comment-only lines',read:(project,language,sample,source)=>basic(source?.components?.reduce((sum,item)=>sum+item.lines,0))},
+  {icon:'size',name:'Logical lines',help:'BCA · logical lines of code',read:(project,language,sample,source)=>basic(source?.logical)},
+  {icon:'size',name:'Functions / files',help:'Functions per file, with the function and file counts beside it. Amber marks a rise of more than 10% from the previous measured ratio in this demo.',read:(project,language,sample,source)=>density(project,language,source)},
+  {icon:'coverage',name:'C++ unit-test coverage',help:'LLVM · instrumented C++ unit tiers',fixed:'coverage'},
+  {icon:'coverage',name:'Python test coverage',help:'crysta public API entries · edi statements in lib/edi',fixed:'python'},
+  {icon:'coverage',name:'C++ API documentation',help:'Doxygen · documented public header symbols',fixed:'docs'},
 ];
 function resultCell(result, language) {
   const label = language ? labels[language]+' ' : '';
@@ -155,7 +164,7 @@ function resultCell(result, language) {
   const extra = ['Clean','Passed','Failed'].includes(result.value) ? '' : statusLabels[result.status];
   return '<span class="result '+result.status+'"'+detail+'>'+
     '<span class="sr">'+label+'</span>'+
-    (language && result.status !== 'neutral' ? '<span class="mark" aria-hidden="true">'+statusSymbols[result.status]+' </span>' : '')+
+    (result.status !== 'neutral' ? '<span class="mark" aria-hidden="true">'+statusSymbols[result.status]+' </span>' : '')+
     '<span class="value">'+escapeHtml(result.value)+'</span>'+
     (result.counts ? '<span class="counts">'+escapeHtml(result.counts)+'</span>' : '')+
     (extra ? '<span class="sr"> '+extra+'</span>' : '')+'</span>';
@@ -167,8 +176,7 @@ function cardRow(card, project, languages) {
     : languages.map(language=>card.read(project,language,snapshot,snapshot[metricsByLanguage[language]]));
   const multiple = results.length>1;
   const tone = multiple ? 'neutral' : results[0].status;
-  return '<div class="reading"><span class="project '+tone+'"><span class="mark" aria-hidden="true">'+
-    (multiple?'':statusSymbols[tone])+'</span>'+project+'</span><div class="values">'+
+  return '<div class="reading"><span class="project '+tone+'">'+project+'</span><div class="values">'+
     results.map((result,index)=>resultCell(result,multiple?languages[index]:null)).join('')+'</div></div>';
 }
 function render() {
@@ -191,7 +199,7 @@ function render() {
     const target = card.complexity && !both ? complexityTarget(active) : null;
     const hint = card.complexity ? '<span class="hint">P90'+(Number.isFinite(target) ? ' ≤ '+target : '')+'</span>' : '';
     return '<article class="card'+(both?' is-both':'')+'" title="'+escapeHtml(card.help)+'"><h2>'+
-      '<span class="icon" aria-hidden="true">'+card.icon+'</span>'+card.name+hint+'</h2>'+
+      '<span class="icon icon-'+card.icon+'" aria-hidden="true"></span>'+card.name+hint+'</h2>'+
       '<div class="readings">'+heads+projects.map(project=>cardRow(card,project,languages)).join('')+'</div></article>';
   }).join('');
 }
