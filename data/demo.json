@@ -106,7 +106,13 @@
           },
           "static": {
             "mi": 66.3,
-            "p90": 13
+            "p90": 13,
+            "functions": 2230,
+            "files": 267
+          },
+          "python_static": {
+            "functions": 8,
+            "files": 2
           }
         },
         {
@@ -121,7 +127,7 @@
           },
           "static": {
             "mi": 67.1,
-            "p90": 12,
+            "p90": 9,
             "files": 268,
             "functions": 2298,
             "logical": 27148,
@@ -174,7 +180,25 @@
             "Clang static analysis": "Clean",
             "Sanitizer tests": "Passed",
             "Docs build": "Passed",
-            "Release verification": "Passed"
+            "Release verification": "Passed",
+            "Ruff": "Clean"
+          },
+          "python_static": {
+            "mi": 73.1,
+            "p90": 5,
+            "files": 2,
+            "functions": 8,
+            "logical": 56,
+            "components": [
+              {
+                "name": "Python bootstrap",
+                "lines": 104
+              }
+            ]
+          },
+          "python_docs": {
+            "covered": 2,
+            "total": 2
           }
         }
       ]
@@ -284,13 +308,19 @@
           },
           "static": {
             "mi": 66.7,
-            "p90": 13
+            "p90": 13,
+            "functions": 1725,
+            "files": 218
+          },
+          "python_static": {
+            "functions": 72,
+            "files": 8
           }
         },
         {
           "date": "2026-11-18",
           "coverage": {
-            "covered": 5921,
+            "covered": 5419,
             "total": 6894
           },
           "docs": {
@@ -299,7 +329,7 @@
           },
           "static": {
             "mi": 67.4,
-            "p90": 12,
+            "p90": 14,
             "files": 215,
             "functions": 1905,
             "logical": 24750,
@@ -356,10 +386,39 @@
             "Clang static analysis": "Clean",
             "Sanitizer tests": "Passed",
             "Docs build": "Passed",
-            "Release verification": "Passed"
+            "Release verification": "Passed",
+            "Ruff": "Clean"
+          },
+          "python_static": {
+            "mi": 62.7,
+            "p90": 11,
+            "files": 8,
+            "functions": 75,
+            "logical": 940,
+            "components": [
+              {
+                "name": "Python package",
+                "lines": 1386
+              }
+            ]
+          },
+          "python_docs": {
+            "covered": 29,
+            "total": 34
           }
         }
       ]
     }
+  },
+  "demoTargets": {
+    "coverage": {
+      "coverage": 80,
+      "python": 80
+    },
+    "complexity": {
+      "cpp": 12,
+      "python": 10
+    },
+    "densityIncrease": 10
   }
 }

@@ -2,87 +2,199 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Enhantica · Dashboard card layouts</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Enhantica · Code quality</title>
 <style>
-:root{color-scheme:dark;--bg:#171c1e;--surface:#20272a;--text:#f0f4f3;--muted:#aab9b7;--border:#364244;--accent:#a6e6bd;--info:#a7d2f5;--mark:#543e2b;--label:#ecc59c;--mono:ui-monospace,Menlo,Consolas,monospace}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,sans-serif}body.light{color-scheme:light;--bg:#f5f6f2;--surface:#fff;--text:#202d29;--muted:#54655e;--border:#dce3dd;--accent:#1f6849;--info:#1d5e85;--mark:#eee6d3;--label:#694514}main{max-width:1250px;margin:auto;padding:25px 30px 28px}.toolbar,.hero,.row,.metric-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.toolbar{border-bottom:1px solid var(--border);padding-bottom:14px}.brand{font-size:14px;font-weight:700;display:flex;gap:9px;align-items:center}.monogram{width:22px;height:22px;border-radius:5px;background:var(--accent);display:grid;place-items:center;color:var(--bg);font-size:13px}.controls{display:flex;gap:5px;align-items:center}.controls button,.project button{background:transparent;color:var(--muted);border:1px solid transparent;border-radius:6px;padding:5px 9px;font:inherit;cursor:pointer}.controls button[aria-pressed=true],.project button[aria-pressed=true]{background:var(--surface);color:var(--text);border-color:var(--border)}a{color:var(--accent)}button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.hero{margin:21px 0 17px;align-items:end}.hero h1{font-size:clamp(29px,4vw,39px);letter-spacing:-.045em;line-height:1.08;margin:0 0 4px}.hero p{color:var(--muted);margin:0;font-size:13px}.demo{white-space:nowrap;padding:4px 8px;border-radius:5px;background:var(--mark);color:var(--label);font-size:11px;font-weight:650}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px 10px;min-width:0}.metric-head{justify-content:flex-start;gap:8px;margin:0 0 7px;font-weight:650;font-size:13px}.glyph{width:18px;height:18px;flex:none;display:grid;place-items:center;border:1px solid var(--border);border-radius:4px;color:var(--accent);font:11px var(--mono)}.row{min-height:28px;border-top:1px solid var(--border);font-size:12px}.repo{display:flex;align-items:center;gap:6px;color:var(--muted);font-weight:550}.repo i{width:6px;height:6px;display:inline-block;border-radius:50%;background:var(--accent)}.repo.edi i{background:var(--info)}.val{font:650 13px var(--mono);color:var(--text);text-align:right}.pass{color:var(--accent)}.trend{font:11px var(--mono);color:var(--accent)}.project{display:flex;gap:5px;margin:-2px 0 11px}.single .row{display:grid;gap:2px;padding-top:4px;justify-content:start;border:0}.single .val{font:660 24px/1.2 system-ui,sans-serif;letter-spacing:-.04em;text-align:left}.detail{color:var(--muted);font-size:11px;margin-top:3px}.section{margin:12px 0 5px;font-size:11px;color:var(--muted);font-weight:650;text-transform:uppercase;letter-spacing:.09em}.light .card{border-radius:6px}.light .row{min-height:25px}.light .grid{gap:8px}.light .card{padding-top:9px}.light .metric-head{margin-bottom:4px}.footer{margin-top:13px;color:var(--muted);font-size:11px}.hidden{display:none!important}
-@media(max-width:790px){main{padding:16px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:470px){.toolbar,.hero{align-items:start;flex-wrap:wrap}.grid{grid-template-columns:1fr}.controls button{font-size:12px;padding:5px 7px}.hero{margin:14px 0}}
+:root {
+  color-scheme:dark;
+  --page:#252525; --card:#1b1b1b; --cap:#202020; --line:#393939;
+  --strong:#e0e0e0; --text:#ccc; --muted:#aaa;
+  --pass:#89c65b; --review:#f6ab43; --fail:#ef8881; --missing:#999;
+}
+* {box-sizing:border-box}
+body {margin:0;background:var(--page);color:var(--text);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main {width:min(100%,1480px);margin:auto;padding:26px clamp(15px,3.5vw,42px) 24px}
+.intro, .scope {display:flex;align-items:center;justify-content:space-between;gap:12px}
+.intro {margin-bottom:22px}
+h1 {font-size:clamp(24px,3vw,32px);line-height:1.1;font-weight:600;letter-spacing:-.036em;margin:0 0 4px;color:var(--strong)}
+.context, .scope {font-size:13px;color:var(--muted)}
+nav {display:flex;gap:2px;border:1px solid #454545;border-radius:6px;padding:3px}
+nav a {padding:5px 10px;border-radius:3px;text-decoration:none;white-space:nowrap;color:var(--muted)}
+nav a[aria-current=page] {background:#3c3c3c;color:#f3f3f3}
+a {color:var(--text)}
+a:hover {color:#fff}
+a:focus-visible {outline:2px solid var(--review);outline-offset:2px}
+.grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.card {border:1px solid #151515;border-radius:7px;background:var(--card);min-width:0}
+.card h2 {display:flex;align-items:center;gap:10px;margin:0;padding:14px 17px;border-radius:6px 6px 0 0;background:var(--cap);border-bottom:1px solid #151515;font-size:clamp(15px,1.5vw,18px);font-weight:500;letter-spacing:-.02em;line-height:1.25;min-height:50px}
+.hint {margin-left:auto;font-size:11px;color:var(--muted);letter-spacing:0;white-space:nowrap}
+.icon {display:inline-grid;place-items:center;width:16px;flex:none;color:#bbb;font-size:16px;font-weight:600}
+.readings {padding:12px 17px;display:grid;gap:5px}
+.reading, .language-head {display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:center;gap:10px}
+.reading {min-height:30px}
+.values, .language-head > div {display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px}
+.result, .language-head span {min-width:0;text-align:right;line-height:1.2}
+.language-head span {font-size:11px;font-weight:550;color:var(--muted)}
+.pass {--tone:var(--pass)}
+.review {--tone:var(--review)}
+.fail {--tone:var(--fail)}
+.missing {--tone:var(--missing)}
+.project {display:flex;align-items:center;gap:7px;color:var(--tone,var(--text))}
+.value {font-size:clamp(15px,1.6vw,20px);color:var(--tone,var(--strong));font-variant-numeric:tabular-nums;white-space:nowrap}
+.mark {width:14px;flex:none;text-align:center;font-size:13px;color:var(--tone,var(--muted))}
+.counts {margin-left:5px;font-size:12px;color:var(--muted);white-space:nowrap}
+.is-both .reading, .is-both .language-head {grid-template-columns:62px minmax(0,1fr)}
+.is-both .counts {display:block;margin:2px 0 1px;font-size:10px}
+.is-both .value {font-size:clamp(13px,1.35vw,17px)}
+.footer {display:flex;justify-content:space-between;align-items:baseline;gap:8px 16px;flex-wrap:wrap;padding-top:15px;color:var(--muted);font-size:12px}
+.legend {display:flex;gap:13px;flex-wrap:wrap;list-style:none;margin:0;padding:0}
+.legend b {color:var(--tone);margin-right:4px;font-weight:600}
+.sr {position:absolute;overflow:hidden;width:1px;height:1px;clip-path:inset(50%);white-space:nowrap}
+@media(max-width:990px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.card h2,.readings{padding-inline:13px}}
+@media(max-width:610px){.intro{align-items:flex-start;flex-direction:column;gap:12px}.grid{grid-template-columns:1fr;gap:12px}main{padding-top:18px}.card h2{min-height:auto}.value,.is-both .value{font-size:17px}}
 </style>
 </head>
 <body>
 <main>
-  <div class="toolbar"><div class="brand"><span class="monogram" aria-hidden="true">▥</span>Enhantica</div><nav class="controls" id="layouts" aria-label="Example layout"></nav></div>
-  <header class="hero"><div><h1>Code quality</h1><p id="context">crysta + edi · main</p></div><span class="demo" id="badge"></span></header>
-  <nav class="project hidden" id="projects" aria-label="Project"></nav>
-  <div id="cards"></div>
-  <footer class="footer"><span id="note"></span> · <a href="trends.html">View trends and components ↗</a></footer>
+  <header class="intro">
+    <div><h1>Code quality</h1><div class="context" id="context"></div></div>
+    <div class="scope"><span>Source metrics</span><nav aria-label="Source metric language">
+      <a href="#cpp">C++</a><a href="#python">Python</a><a href="#both">Both</a>
+    </nav></div>
+  </header>
+  <section class="grid" aria-label="Metric cards for crysta and edi" id="cards"></section>
+  <footer class="footer">
+    <ul class="legend" aria-label="Result legend">
+      <li class="pass"><b aria-hidden="true">✓</b>Within target</li>
+      <li class="review"><b aria-hidden="true">!</b>Review</li>
+      <li class="fail"><b aria-hidden="true">×</b>Failed</li>
+      <li class="missing"><b aria-hidden="true">–</b>No report</li>
+    </ul>
+    <a href="trends.html">Trends and components ↗</a>
+  </footer>
 </main>
 <script type="application/json" id="dashboard-data">__DASHBOARD_DATA__</script>
 <script>
 'use strict';
-const viewNames = {compare:'Side by side',project:'Project tabs',grouped:'Grouped cards'};
-const data = JSON.parse(document.getElementById('dashboard-data').textContent);
-const snapshots = Object.fromEntries(Object.entries(data.projects).map(([project, record])=>[project, record.samples.at(-1) ?? {}]));
+const data = JSON.parse(document.querySelector('#dashboard-data').textContent);
+const projects = ['crysta','edi'];
+const labels = {cpp:'C++',python:'Python'};
+const metricsByLanguage = {cpp:'static',python:'python_static'};
+const analysisByLanguage = {cpp:'Clang static analysis',python:'Ruff'};
+const statusSymbols = {pass:'✓',review:'!',fail:'×',missing:'–',neutral:'·'};
+const statusLabels = {pass:'Within target',review:'Review',fail:'Failed',missing:'No report'};
 const format = new Intl.NumberFormat('en', {maximumFractionDigits:1});
-const count = n => n==null ? '—' : format.format(n);
-const percent = x => x?.total ? count(x.covered*100/x.total)+'%' : '—';
-const footprint = s => s.static?.components?.reduce((sum,component)=>sum+component.lines,0);
-const quality = s => {
-  const status = s.checks?.['Clang static analysis'];
-  return ['Clean','Passed','Failed','Partial','Skipped'].includes(status) ? status : '—';
-};
-const metric = (glyph,label,read,detail) => [glyph,label,read(snapshots.crysta),read(snapshots.edi),detail];
-const coverageMetrics = [
-  metric('✓','C++ unit-test coverage',s=>percent(s.coverage),'Executable lines · instrumented unit tier'),
-  metric('⌘','Python test coverage',s=>percent(s.python),'crysta public API · edi statements'),
-  metric('¶','C++ API documentation',s=>percent(s.docs),'Documented public-header symbols'),
-];
-const qualityMetrics = [
-  metric('≋','Code quality',quality,'Clang static analysis'),
-  metric('∿','Maintainability index',s=>count(s.static?.mi),'Median file MI · BCA'),
-  metric('↯','Cyclomatic complexity',s=>count(s.static?.p90),'90th percentile · McCabe'),
-];
-const sizeMetrics = [
-  metric('≡','Physical code lines',s=>count(footprint(s)),'Production C++ · blanks and comments excluded'),
-  metric('§','Logical lines',s=>count(s.static?.logical),'Production C++ · statements'),
-  metric('▤','Functions / files',s=>s.static ? count(s.static.functions)+' / '+count(s.static.files) : '—','Production C++ · BCA'),
-];
-let view = 'compare';
-let project = 'crysta';
-const byId = (id) => document.getElementById(id);
-function button(id, label, active) {
-  return '<button type="button" data-choice="'+id+'" aria-pressed="'+(id===active)+'">'+label+'</button>';
+const number = value => Number.isFinite(value) ? format.format(value) : '—';
+const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[character]);
+const color = (value, status = 'neutral', detail = '', counts = '') => ({
+  value:value ?? '—', status:value == null ? 'missing' : status, detail, counts,
+});
+const basic = value => color(Number.isFinite(value) ? number(value) : null);
+function currentSnapshot(project) {
+  return data.projects[project].samples.at(-1) ?? {};
 }
-function card([glyph,label,crysta,edi,detail]) {
-  const val = (v) => '<strong class="val'+(['Clean','Passed'].includes(v)?' pass':'')+'">'+v+'</strong>';
-  const line = (name,v) => '<div class="row"><span class="repo '+name+'"><i aria-hidden="true"></i>'+name+'</span>'+val(v)+'</div>';
-  const details = view==='project'
-    ? '<div class="row">'+val(project==='crysta'?crysta:edi)+'<small class="detail">'+detail+'</small></div>'
-    : line('crysta',crysta)+line('edi',edi)+'<div class="detail">'+detail+'</div>';
-  return '<article class="card"><h2 class="metric-head"><span class="glyph" aria-hidden="true">'+glyph+'</span>'+label+'</h2>'+details+'</article>';
+function averageFunctions(report) {
+  return report?.files > 0 && Number.isFinite(report.functions) ? report.functions / report.files : null;
+}
+function density(project, language, report) {
+  const ratio = averageFunctions(report);
+  if (ratio == null) return color(null);
+  const sourceKey = metricsByLanguage[language];
+  const earlier = data.projects[project].samples.slice(0,-1).reverse();
+  const previous = earlier.map(sample=>averageFunctions(sample[sourceKey])).find(value=>value!=null);
+  const reference = Number.isFinite(previous) ? 'Previous measured ratio: '+number(previous) : 'No previous measured ratio';
+  const drift = previous > 0 ? (ratio/previous-1)*100 : null;
+  const threshold = data.demo ? data.demoTargets?.densityIncrease : data.densityReviewIncrease;
+  const flag = drift != null && Number.isFinite(threshold) && drift > threshold;
+  return color(number(ratio),flag?'review':'neutral',
+    'Functions per file. '+reference+(drift == null ? '' : '. Change: '+number(drift)+'%.')+(Number.isFinite(threshold) ? ' Review above a '+threshold+'% increase.' : ''),
+    '('+number(report.functions)+' / '+number(report.files)+')');
+}
+function complexityTarget(language) {
+  return data.demo ? data.demoTargets?.complexity?.[language] : data.complexityTargets?.[language];
+}
+function complexity(language, report) {
+  const score = report?.p90;
+  if (!Number.isFinite(score)) return color(null);
+  const target = complexityTarget(language);
+  return Number.isFinite(target)
+    ? color(number(score),score<=target?'pass':'review','90th percentile McCabe. Target ≤ '+target)
+    : color(number(score),'neutral','90th percentile McCabe. No target configured.');
+}
+function analyzer(sample, language) {
+  const tool = analysisByLanguage[language];
+  const result = sample.checks?.[tool];
+  const statuses = {Clean:'pass',Passed:'pass',Failed:'fail',Partial:'review',Skipped:'missing'};
+  return Object.hasOwn(statuses,result) ? color(result,statuses[result],tool) : color(null,'missing',tool);
+}
+function coverage(sample, key) {
+  const report = sample[key];
+  if (!(report?.total > 0)) return color(null);
+  const value = report.covered*100/report.total;
+  const target = report.target ?? (data.demo ? data.demoTargets?.coverage?.[key] : null);
+  const status = Number.isFinite(target) ? (value>=target ? 'pass' : 'review') : 'neutral';
+  return color(number(value)+'%',status,
+    number(report.covered)+' of '+number(report.total)+(Number.isFinite(target) ? '. Target ≥ '+target+'%' : ''));
+}
+const cards = [
+  {icon:'◉',name:'Code quality',help:'Clang static analysis for C++; Ruff for Python',read:(project,language,sample)=>analyzer(sample,language)},
+  {icon:'◑',name:'Maintainability index',help:'BCA · median file Visual Studio MI',read:(project,language,sample,source)=>basic(source?.mi)},
+  {icon:'⌁',name:'Cyclomatic complexity',complexity:true,help:'BCA · 90th percentile of function McCabe scores',read:(project,language,sample,source)=>complexity(language,source)},
+  {icon:'≡',name:'Physical code lines',help:'BCA · physical code lines excluding blank and comment-only lines',read:(project,language,sample,source)=>basic(source?.components?.reduce((sum,item)=>sum+item.lines,0))},
+  {icon:'§',name:'Logical lines',help:'BCA · logical lines of code',read:(project,language,sample,source)=>basic(source?.logical)},
+  {icon:'▤',name:'Functions / files',help:'Functions per file, with function and file counts in parentheses. Amber marks a rise of more than 10% from the previous measured ratio in this demo.',read:(project,language,sample,source)=>density(project,language,source)},
+  {icon:'▥',name:'C++ unit-test coverage',help:'LLVM · instrumented C++ unit tiers',fixed:'coverage'},
+  {icon:'▥',name:'Python test coverage',help:'crysta public API entries · edi statements in lib/edi',fixed:'python'},
+  {icon:'¶',name:'C++ API documentation',help:'Doxygen · documented public header symbols',fixed:'docs'},
+];
+function resultCell(result, language) {
+  const label = language ? labels[language]+' ' : '';
+  const detail = result.detail ? ' title="'+escapeHtml(result.detail)+'"' : '';
+  const extra = ['Clean','Passed','Failed'].includes(result.value) ? '' : statusLabels[result.status];
+  return '<span class="result '+result.status+'"'+detail+'>'+
+    '<span class="sr">'+label+'</span>'+
+    (language && result.status !== 'neutral' ? '<span class="mark" aria-hidden="true">'+statusSymbols[result.status]+' </span>' : '')+
+    '<span class="value">'+escapeHtml(result.value)+'</span>'+
+    (result.counts ? '<span class="counts">'+escapeHtml(result.counts)+'</span>' : '')+
+    (extra ? '<span class="sr"> '+extra+'</span>' : '')+'</span>';
+}
+function cardRow(card, project, languages) {
+  const snapshot = currentSnapshot(project);
+  const results = card.fixed
+    ? [coverage(snapshot,card.fixed)]
+    : languages.map(language=>card.read(project,language,snapshot,snapshot[metricsByLanguage[language]]));
+  const multiple = results.length>1;
+  const tone = multiple ? 'neutral' : results[0].status;
+  return '<div class="reading"><span class="project '+tone+'"><span class="mark" aria-hidden="true">'+
+    (multiple?'':statusSymbols[tone])+'</span>'+project+'</span><div class="values">'+
+    results.map((result,index)=>resultCell(result,multiple?languages[index]:null)).join('')+'</div></div>';
 }
 function render() {
-  const [layout,who] = location.hash.slice(1).split('/');
-  view = Object.hasOwn(viewNames,layout) ? layout : 'compare';
-  project = who==='edi' ? 'edi' : 'crysta';
-  byId('layouts').innerHTML = Object.entries(viewNames).map(([id,name])=>button(id,name,view)).join('');
-  byId('projects').innerHTML = ['crysta','edi'].map(x=>button(x,x,project)).join('');
-  byId('projects').classList.toggle('hidden',view!=='project');
-  document.body.classList.toggle('light',view==='grouped');
-  byId('context').textContent = (view==='project'?project:'crysta + edi')+' · main';
-  const grid = (items) => '<div class="grid">'+items.map(card).join('')+'</div>';
-  const section = (name,items) => '<section><h2 class="section">'+name+'</h2>'+grid(items)+'</section>';
-  const refs = Object.entries(snapshots).map(([name,s])=>name+' '+(s.sha?.slice(0,9) ?? 'unmeasured'));
-  byId('badge').textContent = data.demo ? 'Demo data' : 'CI measurements';
-  byId('note').textContent = data.demo ? 'Illustrative values' : refs.join(' · ');
-  byId('cards').classList.toggle('single',view==='project');
-  byId('cards').innerHTML = view==='grouped'
-    ? section('Quality',qualityMetrics)+section('Coverage',coverageMetrics)+section('Size',sizeMetrics)
-    : grid([...qualityMetrics,...sizeMetrics,...coverageMetrics]);
+  const requested = location.hash.slice(1);
+  const active = requested==='both' || requested==='python' ? requested : 'cpp';
+  const languages = active==='both' ? ['cpp','python'] : [active];
+  for (const link of document.querySelectorAll('nav a')) {
+    if (link.hash === '#'+active) link.setAttribute('aria-current','page');
+    else link.removeAttribute('aria-current');
+  }
+  document.querySelector('#context').textContent = 'crysta + edi · main'+(data.demo?' · Demo data':'');
+  document.querySelector('#cards').innerHTML = cards.map(card=>{
+    const both = !card.fixed && languages.length>1;
+    const columnLabel = language => {
+      const target = card.complexity ? complexityTarget(language) : null;
+      return labels[language]+(Number.isFinite(target) ? ' ≤ '+target : '');
+    };
+    const heads = both ? '<div class="language-head" aria-hidden="true"><div></div><div>'+
+      languages.map(language=>'<span>'+columnLabel(language)+'</span>').join('')+'</div></div>' : '';
+    const target = card.complexity && !both ? complexityTarget(active) : null;
+    const hint = card.complexity ? '<span class="hint">P90'+(Number.isFinite(target) ? ' ≤ '+target : '')+'</span>' : '';
+    return '<article class="card'+(both?' is-both':'')+'" title="'+escapeHtml(card.help)+'"><h2>'+
+      '<span class="icon" aria-hidden="true">'+card.icon+'</span>'+card.name+hint+'</h2>'+
+      '<div class="readings">'+heads+projects.map(project=>cardRow(card,project,languages)).join('')+'</div></article>';
+  }).join('');
 }
-byId('layouts').addEventListener('click',e=>{const choice=e.target.closest('button');if(choice) location.hash=choice.dataset.choice+'/'+project;});
-byId('projects').addEventListener('click',e=>{const choice=e.target.closest('button');if(choice) location.hash='project/'+choice.dataset.choice;});
 window.addEventListener('hashchange',render);
 render();
 </script>

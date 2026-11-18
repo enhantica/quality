@@ -37,6 +37,7 @@ HEADERS = {"crysta": "include/crysta", "edi": "core/include/edi"}
 CXX_SUFFIXES = {".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".hxx"}
 CHECKS = {
     "Clang static analysis": re.compile("clang-tidy", re.I),
+    "Ruff": re.compile(r"\bruff\b", re.I),
     "Sanitizer tests": re.compile(r"addresssanitizer|threadsanitizer|asan|ubsan|sanitized", re.I),
     "Docs build": re.compile(r"docs.build|mkdocs", re.I),
 }

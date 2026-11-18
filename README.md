@@ -1,6 +1,6 @@
 # Enhantica code quality
 
-A main-branch dashboard for crysta and edi. The default view compares the two projects on metric cards. Project tabs, a grouped layout, and a trend view are available from the page.
+A main-branch dashboard for crysta and edi. The default view compares the two projects on metric cards. Choose C++, Python, or Both for source metrics. The coverage cards keep their explicit scope and the trend view includes detailed component data.
 
 ## Preview
 
