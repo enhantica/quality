@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enhantica · Dashboard card layouts</title>
+<style>
+:root{color-scheme:dark;--bg:#171c1e;--surface:#20272a;--text:#f0f4f3;--muted:#aab9b7;--border:#364244;--accent:#a6e6bd;--info:#a7d2f5;--mark:#543e2b;--label:#ecc59c;--mono:ui-monospace,Menlo,Consolas,monospace}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,sans-serif}body.light{color-scheme:light;--bg:#f5f6f2;--surface:#fff;--text:#202d29;--muted:#54655e;--border:#dce3dd;--accent:#1f6849;--info:#1d5e85;--mark:#eee6d3;--label:#694514}main{max-width:1250px;margin:auto;padding:25px 30px 28px}.toolbar,.hero,.row,.metric-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.toolbar{border-bottom:1px solid var(--border);padding-bottom:14px}.brand{font-size:14px;font-weight:700;display:flex;gap:9px;align-items:center}.monogram{width:22px;height:22px;border-radius:5px;background:var(--accent);display:grid;place-items:center;color:var(--bg);font-size:13px}.controls{display:flex;gap:5px;align-items:center}.controls button,.project button{background:transparent;color:var(--muted);border:1px solid transparent;border-radius:6px;padding:5px 9px;font:inherit;cursor:pointer}.controls button[aria-pressed=true],.project button[aria-pressed=true]{background:var(--surface);color:var(--text);border-color:var(--border)}a{color:var(--accent)}button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.hero{margin:21px 0 17px;align-items:end}.hero h1{font-size:clamp(29px,4vw,39px);letter-spacing:-.045em;line-height:1.08;margin:0 0 4px}.hero p{color:var(--muted);margin:0;font-size:13px}.demo{white-space:nowrap;padding:4px 8px;border-radius:5px;background:var(--mark);color:var(--label);font-size:11px;font-weight:650}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px 10px;min-width:0}.metric-head{justify-content:flex-start;gap:8px;margin:0 0 7px;font-weight:650;font-size:13px}.glyph{width:18px;height:18px;flex:none;display:grid;place-items:center;border:1px solid var(--border);border-radius:4px;color:var(--accent);font:11px var(--mono)}.row{min-height:28px;border-top:1px solid var(--border);font-size:12px}.repo{display:flex;align-items:center;gap:6px;color:var(--muted);font-weight:550}.repo i{width:6px;height:6px;display:inline-block;border-radius:50%;background:var(--accent)}.repo.edi i{background:var(--info)}.val{font:650 13px var(--mono);color:var(--text);text-align:right}.pass{color:var(--accent)}.trend{font:11px var(--mono);color:var(--accent)}.project{display:flex;gap:5px;margin:-2px 0 11px}.single .row{display:grid;gap:2px;padding-top:4px;justify-content:start;border:0}.single .val{font:660 24px/1.2 system-ui,sans-serif;letter-spacing:-.04em;text-align:left}.detail{color:var(--muted);font-size:11px;margin-top:3px}.section{margin:12px 0 5px;font-size:11px;color:var(--muted);font-weight:650;text-transform:uppercase;letter-spacing:.09em}.light .card{border-radius:6px}.light .row{min-height:25px}.light .grid{gap:8px}.light .card{padding-top:9px}.light .metric-head{margin-bottom:4px}.footer{margin-top:13px;color:var(--muted);font-size:11px}.hidden{display:none!important}
+@media(max-width:790px){main{padding:16px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:470px){.toolbar,.hero{align-items:start;flex-wrap:wrap}.grid{grid-template-columns:1fr}.controls button{font-size:12px;padding:5px 7px}.hero{margin:14px 0}}
+</style>
+</head>
+<body>
+<main>
+  <div class="toolbar"><div class="brand"><span class="monogram" aria-hidden="true">▥</span>Enhantica</div><nav class="controls" id="layouts" aria-label="Example layout"></nav></div>
+  <header class="hero"><div><h1>Code quality</h1><p id="context">crysta + edi · main</p></div><span class="demo" id="badge"></span></header>
+  <nav class="project hidden" id="projects" aria-label="Project"></nav>
+  <div id="cards"></div>
+  <footer class="footer"><span id="note"></span> · <a href="trends.html">View trends and components ↗</a></footer>
+</main>
+<script type="application/json" id="dashboard-data">__DASHBOARD_DATA__</script>
+<script>
+'use strict';
+const viewNames = {compare:'Side by side',project:'Project tabs',grouped:'Grouped cards'};
+const data = JSON.parse(document.getElementById('dashboard-data').textContent);
+const snapshots = Object.fromEntries(Object.entries(data.projects).map(([project, record])=>[project, record.samples.at(-1) ?? {}]));
+const format = new Intl.NumberFormat('en', {maximumFractionDigits:1});
+const count = n => n==null ? '—' : format.format(n);
+const percent = x => x?.total ? count(x.covered*100/x.total)+'%' : '—';
+const footprint = s => s.static?.components?.reduce((sum,component)=>sum+component.lines,0);
+const quality = s => {
+  const status = s.checks?.['Clang static analysis'];
+  return ['Clean','Passed','Failed','Partial','Skipped'].includes(status) ? status : '—';
+};
+const metric = (glyph,label,read,detail) => [glyph,label,read(snapshots.crysta),read(snapshots.edi),detail];
+const coverageMetrics = [
+  metric('✓','C++ unit-test coverage',s=>percent(s.coverage),'Executable lines · instrumented unit tier'),
+  metric('⌘','Python test coverage',s=>percent(s.python),'crysta public API · edi statements'),
+  metric('¶','C++ API documentation',s=>percent(s.docs),'Documented public-header symbols'),
+];
+const qualityMetrics = [
+  metric('≋','Code quality',quality,'Clang static analysis'),
+  metric('∿','Maintainability index',s=>count(s.static?.mi),'Median file MI · BCA'),
+  metric('↯','Cyclomatic complexity',s=>count(s.static?.p90),'90th percentile · McCabe'),
+];
+const sizeMetrics = [
+  metric('≡','Physical code lines',s=>count(footprint(s)),'Production C++ · blanks and comments excluded'),
+  metric('§','Logical lines',s=>count(s.static?.logical),'Production C++ · statements'),
+  metric('▤','Functions / files',s=>s.static ? count(s.static.functions)+' / '+count(s.static.files) : '—','Production C++ · BCA'),
+];
+let view = 'compare';
+let project = 'crysta';
+const byId = (id) => document.getElementById(id);
+function button(id, label, active) {
+  return '<button type="button" data-choice="'+id+'" aria-pressed="'+(id===active)+'">'+label+'</button>';
+}
+function card([glyph,label,crysta,edi,detail]) {
+  const val = (v) => '<strong class="val'+(['Clean','Passed'].includes(v)?' pass':'')+'">'+v+'</strong>';
+  const line = (name,v) => '<div class="row"><span class="repo '+name+'"><i aria-hidden="true"></i>'+name+'</span>'+val(v)+'</div>';
+  const details = view==='project'
+    ? '<div class="row">'+val(project==='crysta'?crysta:edi)+'<small class="detail">'+detail+'</small></div>'
+    : line('crysta',crysta)+line('edi',edi)+'<div class="detail">'+detail+'</div>';
+  return '<article class="card"><h2 class="metric-head"><span class="glyph" aria-hidden="true">'+glyph+'</span>'+label+'</h2>'+details+'</article>';
+}
+function render() {
+  const [layout,who] = location.hash.slice(1).split('/');
+  view = Object.hasOwn(viewNames,layout) ? layout : 'compare';
+  project = who==='edi' ? 'edi' : 'crysta';
+  byId('layouts').innerHTML = Object.entries(viewNames).map(([id,name])=>button(id,name,view)).join('');
+  byId('projects').innerHTML = ['crysta','edi'].map(x=>button(x,x,project)).join('');
+  byId('projects').classList.toggle('hidden',view!=='project');
+  document.body.classList.toggle('light',view==='grouped');
+  byId('context').textContent = (view==='project'?project:'crysta + edi')+' · main';
+  const grid = (items) => '<div class="grid">'+items.map(card).join('')+'</div>';
+  const section = (name,items) => '<section><h2 class="section">'+name+'</h2>'+grid(items)+'</section>';
+  const refs = Object.entries(snapshots).map(([name,s])=>name+' '+(s.sha?.slice(0,9) ?? 'unmeasured'));
+  byId('badge').textContent = data.demo ? 'Demo data' : 'CI measurements';
+  byId('note').textContent = data.demo ? 'Illustrative values' : refs.join(' · ');
+  byId('cards').classList.toggle('single',view==='project');
+  byId('cards').innerHTML = view==='grouped'
+    ? section('Quality',qualityMetrics)+section('Coverage',coverageMetrics)+section('Size',sizeMetrics)
+    : grid([...qualityMetrics,...sizeMetrics,...coverageMetrics]);
+}
+byId('layouts').addEventListener('click',e=>{const choice=e.target.closest('button');if(choice) location.hash=choice.dataset.choice+'/'+project;});
+byId('projects').addEventListener('click',e=>{const choice=e.target.closest('button');if(choice) location.hash='project/'+choice.dataset.choice;});
+window.addEventListener('hashchange',render);
+render();
+</script>
+</body>
+</html>

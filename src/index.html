@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Code quality · Enhantica</title>
+<style>
+:root{--sheet:#f6f7f5;--white:#fff;--ink:#152623;--muted:#526461;--line:#dce4df;--rail:#112824;--mint:#adf4cb;--accent:#14734f;--orange:#984c1f;--mono:ui-monospace,"SFMono-Regular",Consolas,monospace}
+*{box-sizing:border-box}body{margin:0;background:var(--sheet);color:var(--ink);font:14px/1.5 system-ui,sans-serif}button,select{font:inherit}button{cursor:pointer}a{color:var(--accent)}button:focus-visible,a:focus-visible,select:focus-visible{outline:3px solid #25966b;outline-offset:3px}
+.layout{display:grid;min-height:100vh;grid-template-columns:214px minmax(0,1fr)}aside{background:var(--rail);padding:33px 20px 24px;display:flex;flex-direction:column;color:#e3f0e9}.brand{display:flex;align-items:center;gap:11px;margin:0 0 54px 5px;font-size:17px;font-weight:700;letter-spacing:-.4px}.mark{width:31px;height:31px;border-radius:8px;display:grid;align-items:end;justify-content:center;grid-template-columns:repeat(3,3px);gap:3px;padding-bottom:8px;background:var(--mint)}.mark i{display:block;border-radius:1px;background:var(--rail)}.mark i:nth-child(1){height:7px}.mark i:nth-child(2){height:11px}.mark i:nth-child(3){height:15px}.rail-caption{margin:0 0 11px 9px;color:#98b5a9;font:11px var(--mono);text-transform:uppercase;letter-spacing:.13em}.nav{display:grid;gap:5px}.nav button{display:flex;align-items:center;gap:10px;width:100%;padding:10px 11px;color:#cfdfd7;text-align:left;border:1px solid transparent;border-radius:8px;background:transparent}.nav button:hover{background:#213b33}.nav button[aria-pressed=true]{background:#284139;border-color:#416356;color:#fff;font-weight:650}.dot{width:8px;height:8px;flex:none;border-radius:50%;background:#a8dfbf}.nav button:last-child .dot{background:#8cc8e8}.branch{margin-left:auto;color:#a5c1b4;font:11px var(--mono)}.rail-foot{margin-top:auto;padding:28px 8px 0;color:#acbfb7;font-size:12px}.rail-foot strong{display:block;margin-bottom:3px;color:#e2eee8;font-weight:600}
+main{width:100%;max-width:1550px;margin:0 auto;padding:29px 36px 28px}.topline{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--muted);font:11px var(--mono);letter-spacing:.04em}.demo{border-radius:5px;background:#f8eed9;color:#73430c;padding:6px 9px;font:650 11px system-ui}.live{background:#e4f0e9;color:#1c6048}.hero{display:flex;justify-content:space-between;align-items:end;gap:12px;margin:19px 0 24px}.hero h1{font-size:clamp(32px,4.6vw,55px);font-weight:680;line-height:1.04;letter-spacing:-.071em;margin:0 0 8px}.hero p{margin:0;color:var(--muted)}.provenance{max-width:43%;text-align:right;color:var(--muted);font:11px/1.55 var(--mono);padding-bottom:2px}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}.panel,.tile,.quick{background:var(--white);border:1px solid var(--line);border-radius:10px}.tile{padding:15px 15px 13px;min-width:0;cursor:pointer;text-align:left;color:var(--ink);appearance:none}.tile:hover{border-color:#83a998}.tile[aria-pressed=true]{border-color:#4b9274;box-shadow:inset 0 2px #77c7a3}.label{display:block;font-size:12px;font-weight:650;color:var(--muted)}.value{display:block;font-weight:670;font-size:clamp(24px,3.1vw,38px);letter-spacing:-.065em;line-height:1.12;margin:8px 0 4px;font-variant-numeric:tabular-nums}.detail{display:block;font-size:11px;color:var(--muted);line-height:1.45;overflow-wrap:anywhere}.delta{display:inline-block;margin-top:8px;color:var(--accent);font:11px var(--mono)}.delta.caution{color:var(--orange)}.delta.neutral{color:var(--muted)}
+.middle{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(230px,1fr);gap:14px;margin-top:14px}.panel{min-width:0;padding:17px 17px 15px}.panel-head{display:flex;justify-content:space-between;align-items:start;gap:10px;margin-bottom:8px}h2{margin:0;font-size:16px;font-weight:700;letter-spacing:-.025em}.panel-head p{margin:3px 0 0;font-size:12px;color:var(--muted)}select{border:1px solid var(--line);border-radius:6px;color:var(--ink);font-size:12px;background:#f8faf8;padding:5px 7px}.plot{height:172px;width:100%;display:block}.legend{font-size:11px;color:var(--muted);margin:7px 0 0}.legend:before{content:"";width:16px;height:2px;background:#357d5f;display:inline-block;margin:0 6px 3px 0}.quicklist{display:grid;gap:0;margin-top:10px}.quickrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-top:1px solid #edf0ee;font-size:12px}.quickrow span:first-child{color:var(--muted)}.quickrow strong{white-space:nowrap;font:600 12px var(--mono)}.status{color:var(--accent)}
+.lower{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(230px,1fr);gap:14px;margin-top:14px}.table-scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;text-align:left;white-space:nowrap;font-size:12px}th{color:var(--muted);font-size:11px;font-weight:600}td,th{padding:8px 6px 8px 0;border-bottom:1px solid #edf0ee}td:first-child{font:11px var(--mono);color:#225443}td:last-child,th:last-child{text-align:right}td a{text-decoration:none}td a:hover{text-decoration:underline}.severity{padding:3px 6px;border-radius:5px;color:#8a481c;background:#f7edde;font:11px var(--mono)}tr:last-child td{border:0}.component{padding:10px 0 8px;border-bottom:1px solid #edf0ee}.component:last-child{border:0}.component div{display:flex;justify-content:space-between;gap:8px;font-size:12px}.component small{color:var(--muted);font:11px var(--mono);white-space:nowrap}.bar{height:4px;background:#e9efe9;border-radius:6px;margin-top:7px;overflow:hidden}.bar i{height:100%;background:#66ae8a;border-radius:6px;display:block}.empty{color:var(--muted);padding:13px 0;font-size:12px}.page-foot{display:flex;justify-content:space-between;gap:12px;margin-top:18px;color:var(--muted);font-size:11px}.page-foot a{white-space:nowrap}
+@media(max-width:1050px){.layout{grid-template-columns:164px minmax(0,1fr)}aside{padding-inline:12px}main{padding-inline:22px}.branch{display:none}.tiles{gap:9px}.tile{padding-inline:11px}.middle{gap:10px}}@media(max-width:760px){.layout{display:block}aside{padding:11px 15px;display:flex;flex-direction:row;align-items:center;gap:15px}.brand{margin:0;font-size:0}.rail-caption,.rail-foot{display:none}.nav{display:flex;gap:5px}.nav button{padding:6px 9px}.branch{display:inline}main{padding:17px 14px}.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.middle,.lower{grid-template-columns:1fr}.hero{align-items:start;flex-direction:column}.provenance{max-width:100%;text-align:left}.page-foot{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside aria-label="Projects">
+  <div class="brand"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>Enhantica</div>
+  <p class="rail-caption">Projects</p>
+  <nav class="nav" id="projects" aria-label="Project"></nav>
+  <div class="rail-foot"><strong>Code quality dashboard</strong>Default-branch metrics</div>
+</aside>
+<main>
+  <div class="topline"><span id="breadcrumb"></span><span class="demo" id="mode"></span></div>
+  <header class="hero">
+    <div><h1 id="title"></h1><p id="description"></p></div>
+    <div class="provenance" id="provenance"></div>
+  </header>
+  <section class="tiles" id="cards" aria-label="Key metrics"></section>
+  <section class="middle" aria-label="Metric history and CI checks">
+    <div class="panel">
+      <div class="panel-head"><div><h2 id="trend-title"></h2><p id="trend-description"></p></div>
+        <select id="range" aria-label="History range"><option value="8">Last 8 samples</option><option value="4">Last 4 samples</option><option value="0">All samples</option></select>
+      </div>
+      <canvas class="plot" id="chart" role="img"></canvas>
+      <p class="legend" id="chart-legend"></p>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div><h2>Quality checks</h2><p>Analysis and test results</p></div></div>
+      <div class="quicklist" id="checks"></div>
+    </div>
+  </section>
+  <section class="lower" aria-label="Component drill-down">
+    <div class="panel">
+      <div class="panel-head"><div><h2>Complexity hotspots</h2><p>Highest cyclomatic complexity by function</p></div></div>
+      <div class="table-scroll"><table><thead><tr><th scope="col">Function</th><th scope="col">Component</th><th scope="col">McCabe</th></tr></thead><tbody id="hotspots"></tbody></table></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div><h2>Code footprint</h2><p id="size-caption"></p></div></div>
+      <div id="components"></div>
+    </div>
+  </section>
+  <footer class="page-foot"><span id="footer"></span><span><a href="index.html">Metric cards</a> · <a id="repository">Source repository ↗</a></span></footer>
+</main>
+</div>
+<script type="application/json" id="dashboard-data">__DASHBOARD_DATA__</script>
+<script>
+'use strict';
+const data = JSON.parse(document.querySelector('#dashboard-data').textContent);
+const byId = (id) => document.getElementById(id);
+const fmt = new Intl.NumberFormat('en', { maximumFractionDigits: 1 });
+const dateFmt = new Intl.DateTimeFormat('en', { month:'short', day:'numeric', timeZone:'UTC' });
+const num = (v) => v == null ? '—' : fmt.format(v);
+const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ratio = (x) => x?.total ? 100 * x.covered / x.total : null;
+const metrics = [
+  {key:'coverage', label:'C++ line coverage', unit:'%', direction:1, read:p=>ratio(p.coverage), detail:p=>p.coverage?.total ? num(p.coverage.covered)+' of '+num(p.coverage.total)+' executable lines' : 'Instrumented unit tier'},
+  {key:'mi', label:'C++ maintainability', unit:'', direction:1, read:p=>p.static?.mi, detail:()=> 'BCA · Visual Studio MI'},
+  {key:'complexity', label:'C++ complexity', unit:'', direction:-1, read:p=>p.static?.p90, detail:()=> '90th percentile · McCabe'},
+  {key:'docs', label:'C++ API documentation', unit:'%', direction:1, read:p=>ratio(p.docs), detail:p=>p.docs?.total ? num(p.docs.covered)+' of '+num(p.docs.total)+' public symbols' : 'Documented public symbols'},
+];
+const meta = {
+  crysta:{title:'crysta', description:'Diffraction engine · C++ core, CLI and Python bindings'},
+  edi:{title:'edi', description:'Diffraction application · C++ core, Qt app, CLI and Python API'},
+};
+function selectedProject() {
+  const requested = location.hash.slice(1);
+  return Object.hasOwn(data.projects, requested) ? requested : Object.keys(data.projects)[0];
+}
+let project = selectedProject();
+let metric = 'coverage';
+function valueText(value, unit) { return value == null ? '—' : num(value)+unit; }
+function render() {
+  const record = data.projects[project];
+  const snapshots = record.samples;
+  const latest = snapshots.at(-1) ?? {};
+  const metricsBranch = record.branch ?? 'main';
+  byId('projects').innerHTML = Object.keys(data.projects).map(name =>
+    '<button type="button" data-project="'+name+'" aria-pressed="'+(name===project)+'"><span class="dot"></span>'+meta[name].title+'<span class="branch">main</span></button>'
+  ).join('');
+  byId('breadcrumb').textContent = 'ENGINEERING / '+project.toUpperCase()+' / '+metricsBranch;
+  byId('mode').textContent = data.demo ? 'Demo data' : 'CI measurements';
+  byId('mode').classList.toggle('live',!data.demo);
+  byId('title').textContent = meta[project].title+' code quality';
+  byId('description').textContent = meta[project].description;
+  byId('provenance').textContent = latest.date ? (data.demo ? 'Illustrative snapshot · ' : (latest.sha?.slice(0,9) ?? 'main')+' · ')+dateFmt.format(new Date(latest.date)) : 'Awaiting first measurement';
+  byId('repository').href = 'https://github.com/enhantica/'+project;
+  byId('cards').innerHTML = metrics.map(item => {
+    const value = item.read(latest);
+    const previous = snapshots.slice(0,-1).reverse().map(item.read).find(x=>x!=null);
+    const difference = value == null || previous == null ? null : Math.round((value-previous)*10)/10;
+    const trendClass = difference == null || difference === 0 ? 'neutral' : difference*item.direction>0 ? '' : 'caution';
+    const delta = difference == null ? (value == null ? 'Unmeasured' : 'First sample') : (difference > 0 ? '+' : '')+num(difference)+(item.unit === '%' ? ' pp' : '')+' since previous sample';
+    return '<button type="button" class="tile" data-metric="'+item.key+'" aria-pressed="'+(metric===item.key)+'"><span class="label">'+item.label+'</span><span class="value">'+valueText(value,item.unit)+'</span><span class="detail">'+item.detail(latest)+'</span><span class="delta '+trendClass+'">'+delta+'</span></button>';
+  }).join('');
+  const python = latest.python;
+  const rows = [
+    ...Object.entries(latest.checks ?? {}).map(([name,result])=>[name,result]),
+    [project==='crysta'?'Python API test coverage':'Python statement coverage',valueText(ratio(python),'%')],
+    ...(latest.python_docs ? [['Python docstring coverage',valueText(ratio(latest.python_docs),'%')]] : []),
+    ...(latest.python_static ? [['Python maintainability',num(latest.python_static.mi)],['Python complexity · P90',num(latest.python_static.p90)]] : []),
+  ];
+  byId('checks').innerHTML = rows.map(([label,status])=>'<div class="quickrow"><span>'+escapeHtml(label)+'</span><strong class="'+(['Passed','Clean'].includes(status)?'status':'')+'">'+escapeHtml(status)+'</strong></div>').join('');
+  const staticMetrics = latest.static;
+  byId('size-caption').textContent = staticMetrics ? num(staticMetrics.files)+' files · '+num(staticMetrics.functions)+' functions · '+num(staticMetrics.logical)+' logical lines' : 'Production source by component';
+  const components = staticMetrics?.components ?? [];
+  const max = Math.max(1, ...components.map(c=>c.lines));
+  byId('components').innerHTML = components.length ? components.map(c=>'<div class="component"><div><span>'+escapeHtml(c.name)+'</span><small>'+num(c.lines)+' code lines</small></div><div class="bar"><i style="width:'+Math.min(100,100*c.lines/max)+'%"></i></div></div>').join('') : '<p class="empty">Awaiting a source metrics report.</p>';
+  const hotspots = staticMetrics?.hotspots ?? [];
+  const sha = /^[0-9a-f]{40}$/.test(latest.sha ?? '') ? latest.sha : null;
+  byId('hotspots').innerHTML = hotspots.length ? hotspots.map(h=>{
+    const symbol = escapeHtml(h.name);
+    const path = (h.path ?? '').split('/').map(encodeURIComponent).join('/');
+    const link = sha && path ? '<a href="https://github.com/enhantica/'+project+'/blob/'+sha+'/'+path+'#L'+Number(h.line)+'" title="'+escapeHtml(h.path)+'">'+symbol+'</a>' : symbol;
+    return '<tr><td>'+link+'</td><td>'+escapeHtml(h.component)+'</td><td><span class="severity">'+num(h.score)+'</span></td></tr>';
+  }).join('') : '<tr><td colspan="3" class="empty">Awaiting a source metrics report.</td></tr>';
+  byId('footer').textContent = data.demo ? 'Illustrative values and function names for layout review.' : 'Each metric uses the source scope and test tier of its CI producer.';
+  draw();
+}
+function draw() {
+  const entry = metrics.find(m=>m.key===metric);
+  const snapshots = data.projects[project].samples;
+  const limit = Number(byId('range').value);
+  const series = (limit ? snapshots.slice(-limit) : snapshots).map(p=>({value:entry.read(p),date:p.date}));
+  const measured = series.filter(point=>point.value!=null);
+  byId('trend-title').textContent = entry.label+' over time';
+  byId('trend-description').textContent = data.demo ? 'Illustrative main-branch snapshots' : 'Recorded main-branch snapshots';
+  byId('chart-legend').textContent = measured.length ? entry.label : 'No measurements for this metric yet';
+  const canvas = byId('chart'), ctx = canvas.getContext('2d');
+  const width = canvas.clientWidth, height = canvas.clientHeight, dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(width*dpr); canvas.height = Math.round(height*dpr);
+  ctx.scale(dpr,dpr);
+  canvas.setAttribute('aria-label', measured.length ? entry.label+': '+measured.map(p=>dateFmt.format(new Date(p.date))+' '+valueText(p.value,entry.unit)).join(', ') : 'No trend data');
+  if (!measured.length || width<100) return;
+  const pad={left:45,right:14,top:12,bottom:26}, plotWidth=width-pad.left-pad.right, plotHeight=height-pad.top-pad.bottom;
+  const vals=measured.map(p=>p.value), lo=Math.min(...vals), hi=Math.max(...vals);
+  const step=Math.max(entry.unit==='%' ? 2 : 1, Math.ceil((hi-lo+2)/4));
+  const bottom=Math.max(0,Math.floor((lo-1)/step)*step);
+  const top=bottom+step*Math.max(4,Math.ceil((hi-bottom+0.5)/step));
+  const x=i=>pad.left+(series.length===1 ? plotWidth/2 : plotWidth*i/(series.length-1));
+  const y=v=>pad.top+plotHeight*(top-v)/(top-bottom);
+  ctx.font='10px ui-monospace, monospace';
+  ctx.textAlign='right';
+  for(let tick=bottom;tick<=top;tick+=step){
+    const row=y(tick);
+    ctx.strokeStyle='#e1e8e2';ctx.beginPath();ctx.moveTo(pad.left,row);ctx.lineTo(width-pad.right,row);ctx.stroke();
+    ctx.fillStyle='#526461';ctx.fillText(num(tick)+entry.unit,pad.left-8,row+3);
+  }
+  if(measured.length===series.length && series.length>1){
+    const shade=ctx.createLinearGradient(0,pad.top,0,height-pad.bottom);
+    shade.addColorStop(0,'#caead9');shade.addColorStop(1,'#edf7f0');
+    ctx.fillStyle=shade;ctx.beginPath();ctx.moveTo(x(0),y(series[0].value));
+    series.forEach((p,i)=>ctx.lineTo(x(i),y(p.value)));
+    ctx.lineTo(x(series.length-1),y(bottom));ctx.lineTo(x(0),y(bottom));ctx.closePath();ctx.fill();
+  }
+  ctx.strokeStyle='#207654';ctx.lineWidth=2.2;ctx.beginPath();
+  let connect=false;
+  series.forEach((p,i)=>{if(p.value==null){connect=false;return;}if(connect)ctx.lineTo(x(i),y(p.value));else ctx.moveTo(x(i),y(p.value));connect=true;});
+  ctx.stroke();
+  series.forEach((p,i)=>{
+    if(p.value!=null){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x(i),y(p.value),3,0,2*Math.PI);ctx.fill();ctx.stroke();}
+    const skip=Math.max(1,Math.ceil(series.length/Math.max(3,Math.floor(plotWidth/70))));
+    if(i%skip===0 || i===series.length-1){ctx.fillStyle='#526461';ctx.textAlign=i===0?'left':i===series.length-1?'right':'center';ctx.fillText(dateFmt.format(new Date(p.date)),x(i),height-7);}
+  });
+}
+byId('projects').addEventListener('click',(event)=>{
+  const choice=event.target.closest('[data-project]');
+  if(choice){location.hash=choice.dataset.project;}
+});
+window.addEventListener('hashchange',()=>{project=selectedProject();render();byId('projects').querySelector('[aria-pressed=true]').focus();});
+byId('cards').addEventListener('click',(event)=>{
+  const choice=event.target.closest('[data-metric]');
+  if(choice){metric=choice.dataset.metric;render();byId('cards').querySelector('[aria-pressed=true]').focus();}
+});
+byId('range').addEventListener('change',draw);
+window.addEventListener('resize',draw);
+render();
+</script>
+</body>
+</html>

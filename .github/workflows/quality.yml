@@ -1,0 +1,149 @@
+name: Code quality dashboard
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '25 7 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PUBLISH_LIVE: ${{ vars.QUALITY_PUBLISH_LIVE }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Authorize read access to the product repositories
+        if: env.PUBLISH_LIVE == 'true'
+        id: source-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.QUALITY_APP_ID }}
+          private-key: ${{ secrets.QUALITY_APP_KEY }}
+          owner: enhantica
+          repositories: crysta,edi
+          permission-contents: read
+          permission-actions: read
+      - name: Check out crysta main
+        if: env.PUBLISH_LIVE == 'true'
+        uses: actions/checkout@v5
+        with:
+          repository: enhantica/crysta
+          ref: main
+          path: inputs/crysta
+          token: ${{ steps.source-token.outputs.token }}
+          persist-credentials: false
+          sparse-checkout: |
+            include/crysta
+            src/core
+            src/cli
+            src/bindings
+            lib/crysta
+      - name: Check out edi main
+        if: env.PUBLISH_LIVE == 'true'
+        uses: actions/checkout@v5
+        with:
+          repository: enhantica/edi
+          ref: main
+          path: inputs/edi
+          token: ${{ steps.source-token.outputs.token }}
+          persist-credentials: false
+          sparse-checkout: |
+            core/include
+            core/src
+            cli
+            lib/src
+            lib/edi
+            lib/easydiffraction
+            app/src
+            assistant/native
+      - name: Install BCA and Doxygen
+        if: env.PUBLISH_LIVE == 'true'
+        env:
+          BCA_VERSION: '2.6.0'
+          BCA_SHA256: '53df050fad1e9bc9081fbe89bb216db7631633d4a741f5ea2e9c322ae9cc0864'
+          DOXYGEN_VERSION: '1.18.0'
+          DOXYGEN_SHA256: '14fa81bdc34171edb5f1f02b1d60e74802f0439b77fa44e592565d517d72df90'
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          stage="big-code-analysis-${BCA_VERSION}-x86_64-unknown-linux-gnu"
+          curl -fsSLo "$stage.tar.gz" "https://github.com/dekobon/big-code-analysis/releases/download/v${BCA_VERSION}/$stage.tar.gz"
+          printf '%s  %s\n' "$BCA_SHA256" "$stage.tar.gz" | sha256sum --check --strict -
+          tar -xzf "$stage.tar.gz" "$stage/bca"
+          echo "$RUNNER_TEMP/$stage" >> "$GITHUB_PATH"
+          docs_bin="doxygen-${DOXYGEN_VERSION}/bin"
+          docs_tag="Release_${DOXYGEN_VERSION//./_}"
+          docs_tar="doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz"
+          curl -fsSLo "$docs_tar" "https://github.com/doxygen/doxygen/releases/download/$docs_tag/$docs_tar"
+          printf '%s  %s\n' "$DOXYGEN_SHA256" "$docs_tar" | sha256sum --check --strict -
+          tar -xzf "$docs_tar" "$docs_bin/doxygen"
+          echo "$RUNNER_TEMP/$docs_bin" >> "$GITHUB_PATH"
+      - name: Restore the last published set of snapshots
+        if: env.PUBLISH_LIVE == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p history
+          run_id="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow quality.yml --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
+          if [[ -n "$run_id" ]]; then
+            artifact_id="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts" --jq '[.artifacts[] | select(.name == "quality-snapshots" and .expired == false)] | .[0].id // empty')"
+            if [[ -n "$artifact_id" ]]; then
+              gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name quality-snapshots --dir history
+            fi
+          fi
+      - name: Collect public aggregates for both main branches
+        if: env.PUBLISH_LIVE == 'true'
+        env:
+          GH_TOKEN: ${{ steps.source-token.outputs.token }}
+        run: >-
+          python3 scripts/collect.py --crysta inputs/crysta --edi inputs/edi --docs --github
+          --history history/snapshots.json --output history/snapshots.json
+      - name: Render dashboard
+        run: |
+          set -euo pipefail
+          input=data/demo.json
+          if [[ "$PUBLISH_LIVE" == 'true' ]]; then input=history/snapshots.json; fi
+          python3 scripts/render.py --data "$input"
+          python3 scripts/render.py --data "$input" --trends --output dist/trends.html
+      - name: Retain aggregates for the next run
+        if: env.PUBLISH_LIVE == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-snapshots
+          path: history/snapshots.json
+          if-no-files-found: error
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    runs-on: ubuntu-24.04
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.publish.outputs.page_url }}
+    steps:
+      - name: Deploy dashboard
+        id: publish
+        uses: actions/deploy-pages@v4

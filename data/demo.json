@@ -1,0 +1,365 @@
+{
+  "demo": true,
+  "projects": {
+    "crysta": {
+      "branch": "main",
+      "samples": [
+        {
+          "date": "2026-10-21",
+          "coverage": {
+            "covered": 27140,
+            "total": 34542
+          },
+          "docs": {
+            "covered": 275,
+            "total": 385
+          },
+          "static": {
+            "mi": 61.4,
+            "p90": 14
+          }
+        },
+        {
+          "date": "2026-10-25",
+          "coverage": {
+            "covered": 27643,
+            "total": 34542
+          },
+          "docs": {
+            "covered": 282,
+            "total": 385
+          },
+          "static": {
+            "mi": 62.7,
+            "p90": 14
+          }
+        },
+        {
+          "date": "2026-10-29",
+          "coverage": {
+            "covered": 27419,
+            "total": 34542
+          },
+          "docs": {
+            "covered": 281,
+            "total": 385
+          },
+          "static": {
+            "mi": 62.4,
+            "p90": 13
+          }
+        },
+        {
+          "date": "2026-11-02",
+          "coverage": {
+            "covered": 27889,
+            "total": 34542
+          },
+          "docs": {
+            "covered": 297,
+            "total": 385
+          },
+          "static": {
+            "mi": 63.5,
+            "p90": 13
+          }
+        },
+        {
+          "date": "2026-11-06",
+          "coverage": {
+            "covered": 28309,
+            "total": 34542
+          },
+          "docs": {
+            "covered": 302,
+            "total": 385
+          },
+          "static": {
+            "mi": 63.9,
+            "p90": 15
+          }
+        },
+        {
+          "date": "2026-11-10",
+          "coverage": {
+            "covered": 28296,
+            "total": 34542
+          },
+          "docs": {
+            "covered": 314,
+            "total": 385
+          },
+          "static": {
+            "mi": 64.1,
+            "p90": 14
+          }
+        },
+        {
+          "date": "2026-11-14",
+          "coverage": {
+            "covered": 28768,
+            "total": 34542
+          },
+          "docs": {
+            "covered": 324,
+            "total": 385
+          },
+          "static": {
+            "mi": 66.3,
+            "p90": 13
+          }
+        },
+        {
+          "date": "2026-11-18",
+          "coverage": {
+            "covered": 29148,
+            "total": 34542
+          },
+          "docs": {
+            "covered": 332,
+            "total": 385
+          },
+          "static": {
+            "mi": 67.1,
+            "p90": 12,
+            "files": 268,
+            "functions": 2298,
+            "logical": 27148,
+            "components": [
+              {
+                "name": "Engine",
+                "lines": 26907
+              },
+              {
+                "name": "Public headers",
+                "lines": 8154
+              },
+              {
+                "name": "Bindings",
+                "lines": 5426
+              },
+              {
+                "name": "Native CLI",
+                "lines": 3440
+              }
+            ],
+            "hotspots": [
+              {
+                "name": "refine_model()",
+                "component": "Engine",
+                "score": 43
+              },
+              {
+                "name": "evaluate_profile()",
+                "component": "Engine",
+                "score": 37
+              },
+              {
+                "name": "parse_fit_options()",
+                "component": "Native CLI",
+                "score": 29
+              },
+              {
+                "name": "dispatch_kernel()",
+                "component": "Engine",
+                "score": 27
+              }
+            ]
+          },
+          "python": {
+            "covered": 291,
+            "total": 321
+          },
+          "checks": {
+            "Clang static analysis": "Clean",
+            "Sanitizer tests": "Passed",
+            "Docs build": "Passed",
+            "Release verification": "Passed"
+          }
+        }
+      ]
+    },
+    "edi": {
+      "branch": "main",
+      "samples": [
+        {
+          "date": "2026-10-21",
+          "coverage": {
+            "covered": 5250,
+            "total": 6894
+          },
+          "docs": {
+            "covered": 205,
+            "total": 308
+          },
+          "static": {
+            "mi": 62.7,
+            "p90": 15
+          }
+        },
+        {
+          "date": "2026-10-25",
+          "coverage": {
+            "covered": 5351,
+            "total": 6894
+          },
+          "docs": {
+            "covered": 206,
+            "total": 308
+          },
+          "static": {
+            "mi": 63.3,
+            "p90": 16
+          }
+        },
+        {
+          "date": "2026-10-29",
+          "coverage": {
+            "covered": 5331,
+            "total": 6894
+          },
+          "docs": {
+            "covered": 219,
+            "total": 308
+          },
+          "static": {
+            "mi": 62.1,
+            "p90": 15
+          }
+        },
+        {
+          "date": "2026-11-02",
+          "coverage": {
+            "covered": 5636,
+            "total": 6894
+          },
+          "docs": {
+            "covered": 228,
+            "total": 308
+          },
+          "static": {
+            "mi": 65.1,
+            "p90": 14
+          }
+        },
+        {
+          "date": "2026-11-06",
+          "coverage": {
+            "covered": 5690,
+            "total": 6894
+          },
+          "docs": {
+            "covered": 234,
+            "total": 308
+          },
+          "static": {
+            "mi": 64.6,
+            "p90": 13
+          }
+        },
+        {
+          "date": "2026-11-10",
+          "coverage": {
+            "covered": 5788,
+            "total": 6894
+          },
+          "docs": {
+            "covered": 240,
+            "total": 308
+          },
+          "static": {
+            "mi": 65.2,
+            "p90": 14
+          }
+        },
+        {
+          "date": "2026-11-14",
+          "coverage": {
+            "covered": 5830,
+            "total": 6894
+          },
+          "docs": {
+            "covered": 250,
+            "total": 308
+          },
+          "static": {
+            "mi": 66.7,
+            "p90": 13
+          }
+        },
+        {
+          "date": "2026-11-18",
+          "coverage": {
+            "covered": 5921,
+            "total": 6894
+          },
+          "docs": {
+            "covered": 255,
+            "total": 308
+          },
+          "static": {
+            "mi": 67.4,
+            "p90": 12,
+            "files": 215,
+            "functions": 1905,
+            "logical": 24750,
+            "components": [
+              {
+                "name": "Desktop app",
+                "lines": 23254
+              },
+              {
+                "name": "Core & headers",
+                "lines": 11768
+              },
+              {
+                "name": "Bindings",
+                "lines": 4110
+              },
+              {
+                "name": "Native CLI",
+                "lines": 3395
+              },
+              {
+                "name": "Assistant native",
+                "lines": 2810
+              }
+            ],
+            "hotspots": [
+              {
+                "name": "restore_project()",
+                "component": "Core & headers",
+                "score": 39
+              },
+              {
+                "name": "draw_series()",
+                "component": "Desktop app",
+                "score": 35
+              },
+              {
+                "name": "dispatch_action()",
+                "component": "Assistant native",
+                "score": 31
+              },
+              {
+                "name": "read_arguments()",
+                "component": "Native CLI",
+                "score": 27
+              }
+            ]
+          },
+          "python": {
+            "covered": 1652,
+            "total": 1850
+          },
+          "checks": {
+            "Clang static analysis": "Clean",
+            "Sanitizer tests": "Passed",
+            "Docs build": "Passed",
+            "Release verification": "Passed"
+          }
+        }
+      ]
+    }
+  }
+}
