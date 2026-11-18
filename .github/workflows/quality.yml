@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      collect_only:
+        description: Collect metrics as an Actions artifact without deploying Pages
+        type: boolean
+        default: false
   schedule:
     - cron: '25 7 * * 1'
 
@@ -24,23 +29,24 @@ jobs:
       actions: read
     env:
       PUBLISH_LIVE: ${{ vars.QUALITY_PUBLISH_LIVE }}
+      COLLECT_METRICS: ${{ vars.QUALITY_PUBLISH_LIVE == 'true' || inputs.collect_only == true }}
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
       - name: Authorize read access to the product repositories
-        if: env.PUBLISH_LIVE == 'true'
+        if: env.COLLECT_METRICS == 'true'
         id: source-token
         uses: actions/create-github-app-token@v2
         with:
-          app-id: ${{ vars.QUALITY_APP_ID }}
-          private-key: ${{ secrets.QUALITY_APP_KEY }}
+          app-id: ${{ vars.QUALITY_APP_ID || vars.ENHANTICA_APP_ID }}
+          private-key: ${{ secrets.QUALITY_APP_KEY || secrets.ENHANTICA_APP_KEY }}
           owner: enhantica
           repositories: crysta,edi
           permission-contents: read
           permission-actions: read
       - name: Check out crysta main
-        if: env.PUBLISH_LIVE == 'true'
+        if: env.COLLECT_METRICS == 'true'
         uses: actions/checkout@v5
         with:
           repository: enhantica/crysta
@@ -55,7 +61,7 @@ jobs:
             src/bindings
             lib/crysta
       - name: Check out edi main
-        if: env.PUBLISH_LIVE == 'true'
+        if: env.COLLECT_METRICS == 'true'
         uses: actions/checkout@v5
         with:
           repository: enhantica/edi
@@ -73,7 +79,7 @@ jobs:
             app/src
             assistant/native
       - name: Install BCA and Doxygen
-        if: env.PUBLISH_LIVE == 'true'
+        if: env.COLLECT_METRICS == 'true'
         env:
           BCA_VERSION: '2.6.0'
           BCA_SHA256: '53df050fad1e9bc9081fbe89bb216db7631633d4a741f5ea2e9c322ae9cc0864'
@@ -95,7 +101,7 @@ jobs:
           tar -xzf "$docs_tar" "$docs_bin/doxygen"
           echo "$RUNNER_TEMP/$docs_bin" >> "$GITHUB_PATH"
       - name: Restore the last published set of snapshots
-        if: env.PUBLISH_LIVE == 'true'
+        if: env.COLLECT_METRICS == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -109,13 +115,14 @@ jobs:
             fi
           fi
       - name: Collect public aggregates for both main branches
-        if: env.PUBLISH_LIVE == 'true'
+        if: env.COLLECT_METRICS == 'true'
         env:
           GH_TOKEN: ${{ steps.source-token.outputs.token }}
         run: >-
           python3 scripts/collect.py --crysta inputs/crysta --edi inputs/edi --docs --github
           --history history/snapshots.json --output history/snapshots.json
       - name: Render dashboard
+        if: inputs.collect_only != true
         run: |
           set -euo pipefail
           input=data/demo.json
@@ -123,20 +130,21 @@ jobs:
           python3 scripts/render.py --data "$input"
           python3 scripts/render.py --data "$input" --trends --output dist/trends.html
       - name: Retain aggregates for the next run
-        if: env.PUBLISH_LIVE == 'true'
+        if: env.COLLECT_METRICS == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: quality-snapshots
           path: history/snapshots.json
           if-no-files-found: error
       - uses: actions/upload-pages-artifact@v3
+        if: inputs.collect_only != true
         with:
           path: dist
 
   deploy:
     runs-on: ubuntu-24.04
     needs: build
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && inputs.collect_only != true
     permissions:
       pages: write
       id-token: write
