@@ -122,11 +122,10 @@ jobs:
           python3 scripts/collect.py --crysta inputs/crysta --edi inputs/edi --docs --github
           --history history/snapshots.json --output history/snapshots.json
       - name: Render dashboard
-        if: inputs.collect_only != true
         run: |
           set -euo pipefail
           input=data/demo.json
-          if [[ "$PUBLISH_LIVE" == 'true' ]]; then input=history/snapshots.json; fi
+          if [[ "$COLLECT_METRICS" == 'true' ]]; then input=history/snapshots.json; fi
           python3 scripts/render.py --data "$input"
           python3 scripts/render.py --data "$input" --trends --output dist/trends.html
       - name: Retain aggregates for the next run
@@ -135,6 +134,13 @@ jobs:
         with:
           name: quality-snapshots
           path: history/snapshots.json
+          if-no-files-found: error
+      - name: Retain the private HTML dashboard
+        if: inputs.collect_only == true
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-private-dashboard
+          path: dist
           if-no-files-found: error
       - uses: actions/upload-pages-artifact@v3
         if: inputs.collect_only != true

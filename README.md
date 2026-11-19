@@ -17,7 +17,7 @@ The workflow runs on this repo’s main branch, on dispatch, and weekly. Enable 
 
 The collector requests read access to Actions and Contents for both product repositories. It uses the existing Enhantica app configuration by default. The repository variable `QUALITY_APP_ID` and secret `QUALITY_APP_KEY` can point it to a different app.
 
-Run the workflow manually with `collect_only=true` to inspect the current metrics in the private `quality-snapshots` Actions artifact. Set `QUALITY_PUBLISH_LIVE` to `true` to publish live aggregates once the Pages audience is confirmed. The current Pages site is public.
+Run the workflow manually with `collect_only=true` to download the private `quality-private-dashboard` Actions artifact. Open `index.html` from the extracted archive. The same run saves its machine-readable metrics as `quality-snapshots`. Set `QUALITY_PUBLISH_LIVE` to `true` to publish live aggregates once the Pages audience is confirmed. The current Pages site is public.
 
 The workflow checks out each project's own main commit. BCA reads the declared production C++ and Python source roots. Metrics include physical code lines, logical lines, file and function counts, median file Visual Studio MI for files with measured Halstead volume, and the nearest-rank 90th percentile of function cyclomatic complexity. Reports contain aggregates and public edi function links. The crysta report omits function names and source paths.
 
