@@ -76,6 +76,9 @@ a:focus-visible {outline:2px solid var(--info);outline-offset:2px}
 .legend b {color:var(--tone);margin-right:4px;font-weight:600}
 .sr {position:absolute;overflow:hidden;width:1px;height:1px;clip-path:inset(50%);white-space:nowrap}
 .metric-tooltip {position:fixed;z-index:2;width:min(340px,calc(100% - 24px));max-height:calc(100% - 24px);overflow:auto;padding:13px 14px;border:1px solid var(--line);border-radius:8px;background:var(--card);box-shadow:0 8px 26px #20293629;color:var(--muted);font-size:var(--font-meta);line-height:1.45}
+.metric-tooltip:not([hidden]) {animation:tooltip-enter 160ms ease-out both}
+@keyframes tooltip-enter {from {opacity:0} to {opacity:1}}
+@media(prefers-reduced-motion:reduce){.metric-tooltip:not([hidden]){animation:none}}
 .metric-tooltip strong {display:block;color:var(--text);font-size:var(--font-metric)}
 .metric-tooltip p {margin:4px 0 8px}
 .range-label {display:block;margin-top:9px;color:var(--text);font-weight:600}
@@ -381,6 +384,7 @@ function renderCard(group, card) {
 const tooltip = document.querySelector('#metric-tooltip');
 let activeTrigger;
 let pinned = false;
+let hoverTimer;
 let closeTimer;
 function positionTooltip() {
   if (!activeTrigger) return;
@@ -403,7 +407,12 @@ function hideTooltip() {
   pinned = false;
   tooltip.hidden = true;
 }
+function dismissTooltip() {
+  clearTimeout(hoverTimer);
+  hideTooltip();
+}
 function showTooltip(trigger) {
+  clearTimeout(hoverTimer);
   clearTimeout(closeTimer);
   if (trigger===activeTrigger) return;
   hideTooltip();
@@ -433,9 +442,13 @@ function scheduleClose() {
 function bindTooltipTriggers() {
   for (const trigger of document.querySelectorAll('.info-trigger')) {
     trigger.addEventListener('pointerenter',event=>{
-      if (event.pointerType!=='touch' && !pinned && !tooltip.contains(document.activeElement)) showTooltip(trigger);
+      if (event.pointerType==='touch' || pinned || tooltip.contains(document.activeElement)) return;
+      clearTimeout(hoverTimer);
+      if (activeTrigger===trigger) clearTimeout(closeTimer);
+      else hoverTimer = setTimeout(()=>showTooltip(trigger),1000);
     });
     trigger.addEventListener('pointerleave',()=>{
+      clearTimeout(hoverTimer);
       if (activeTrigger===trigger) scheduleClose();
     });
     trigger.addEventListener('focus',()=>showTooltip(trigger));
@@ -464,19 +477,19 @@ tooltip.addEventListener('focusout',event=>{
   if (event.relatedTarget!==activeTrigger && !tooltip.contains(event.relatedTarget)) hideTooltip();
 });
 document.addEventListener('click',event=>{
-  if (!event.target.closest('.info-trigger, .metric-tooltip')) hideTooltip();
+  if (!event.target.closest('.info-trigger, .metric-tooltip')) dismissTooltip();
 });
 document.addEventListener('keydown',event=>{
   if (event.key==='Escape') {
     if (tooltip.contains(document.activeElement)) activeTrigger?.focus();
-    hideTooltip();
+    dismissTooltip();
   }
 });
 window.addEventListener('resize',positionTooltip);
 window.addEventListener('scroll',positionTooltip,{passive:true});
 
 function renderSnapshot() {
-  hideTooltip();
+  dismissTooltip();
   document.querySelector('main').after(tooltip);
   tooltipContent.length = 0;
   const cards = document.querySelector('#cards');
