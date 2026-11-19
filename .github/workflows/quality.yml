@@ -126,7 +126,7 @@ jobs:
           set -euo pipefail
           input=data/demo.json
           if [[ "$COLLECT_METRICS" == 'true' ]]; then input=history/snapshots.json; fi
-          python3 scripts/render.py --data "$input"
+          python3 scripts/render.py --data "$input" --summary "$GITHUB_STEP_SUMMARY"
           python3 scripts/render.py --data "$input" --trends --output dist/trends.html
       - name: Retain aggregates for the next run
         if: env.COLLECT_METRICS == 'true'

@@ -148,7 +148,7 @@ function coverage(sample, key) {
 }
 const cards = [
   {icon:'quality',name:'Code quality',help:'Clang static analysis for C++; Ruff for Python',read:(project,language,sample)=>analyzer(sample,language)},
-  {icon:'quality',name:'Maintainability index',help:'BCA · median file Visual Studio MI',read:(project,language,sample,source)=>basic(source?.mi)},
+  {icon:'quality',name:'Maintainability index',hint:'File median',help:'BCA · file median, Visual Studio MI scale (0–100)',read:(project,language,sample,source)=>basic(source?.mi)},
   {icon:'quality',name:'Cyclomatic complexity',complexity:true,help:'BCA · 90th percentile of function McCabe scores',read:(project,language,sample,source)=>complexity(language,source)},
   {icon:'size',name:'Physical code lines',help:'BCA · physical code lines excluding blank and comment-only lines',read:(project,language,sample,source)=>basic(source?.components?.reduce((sum,item)=>sum+item.lines,0))},
   {icon:'size',name:'Logical lines',help:'BCA · logical lines of code',read:(project,language,sample,source)=>basic(source?.logical)},
@@ -196,7 +196,8 @@ function render() {
     const heads = both ? '<div class="language-head" aria-hidden="true"><div></div><div>'+
       languages.map(language=>'<span>'+columnLabel(language)+'</span>').join('')+'</div></div>' : '';
     const target = card.complexity && !both ? complexityTarget(active) : null;
-    const hint = card.complexity ? '<span class="hint">P90'+(Number.isFinite(target) ? ' ≤ '+target : '')+'</span>' : '';
+    const caption = card.complexity ? 'P90'+(Number.isFinite(target) ? ' ≤ '+target : '') : card.hint;
+    const hint = caption ? '<span class="hint">'+caption+'</span>' : '';
     return '<article class="card'+(both?' is-both':'')+'" title="'+escapeHtml(card.help)+'"><h2>'+
       '<span class="icon icon-'+card.icon+'" aria-hidden="true"></span>'+card.name+hint+'</h2>'+
       '<div class="readings">'+heads+projects.map(project=>cardRow(card,project,languages)).join('')+'</div></article>';
