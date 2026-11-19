@@ -8,7 +8,7 @@
 <style>
 :root {
   color-scheme:light;
-  --font-metric:16px;--font-meta:12px;
+  --font-title:24px;--font-metric:16px;--font-meta:12px;
   --page:#f5f6f8; --card:#fff; --line:#dee3e9;
   --text:#202936; --muted:#566373;
   --pass:#236b41; --review:#8b560b; --fail:#ad3838; --missing:#667184; --info:#245d9c;
@@ -17,6 +17,10 @@
 * {box-sizing:border-box}
 body {margin:0;background:var(--page);color:var(--text);font:var(--font-metric)/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 main {width:min(100%,1480px);margin:auto;padding:22px clamp(15px,3.5vw,42px) 24px}
+.page-header {display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 16px}
+.page-header h1 {margin:0;font-size:var(--font-title);font-weight:650;line-height:1.15;letter-spacing:-.035em}
+.snapshot-picker {min-width:0;width:224px;max-width:56%;padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--text);font:inherit;font-size:var(--font-meta)}
+.snapshot-picker:focus-visible {outline:2px solid var(--info);outline-offset:2px}
 a {color:var(--info);text-underline-offset:2px}
 a:hover {color:var(--text)}
 a:focus-visible {outline:2px solid var(--info);outline-offset:2px}
@@ -76,6 +80,12 @@ a:focus-visible {outline:2px solid var(--info);outline-offset:2px}
 </head>
 <body>
 <main>
+  <header class="page-header">
+    <h1>Code quality</h1>
+    <select class="snapshot-picker" id="snapshot-picker" aria-label="Main branch or release">
+      <option value="main">Current main</option>
+    </select>
+  </header>
   <section class="grid" aria-label="Metric cards for crysta and edi" id="cards"></section>
   <footer class="footer">
     <ul class="legend" aria-label="Result legend">
@@ -86,7 +96,7 @@ a:focus-visible {outline:2px solid var(--info);outline-offset:2px}
       <li class="missing"><b aria-hidden="true">–</b>No report</li>
     </ul>
     <span id="demo-label" hidden>Demo data</span>
-    <a href="trends.html">Trends and components ↗</a>
+    <a id="trends-link" href="trends.html">Trends and components ↗</a>
   </footer>
 </main>
 <div class="metric-tooltip" id="metric-tooltip" role="region" aria-labelledby="metric-tooltip-title" hidden></div>
@@ -101,6 +111,23 @@ const metricsByLanguage = {cpp:'static',python:'python_static'};
 const analysisByLanguage = {cpp:'Clang static analysis',python:'Ruff'};
 const coverageByLanguage = {cpp:'coverage',python:'python'};
 const docsByLanguage = {cpp:'docs',python:'python_docs'};
+const snapshots = document.querySelector('#snapshot-picker');
+const releases = new Map();
+let selectedRelease;
+for (const project of projects) {
+  const published = data.projects[project].releases ?? [];
+  if (!published.length) continue;
+  const group = document.createElement('optgroup');
+  group.label = project === 'crysta' ? 'crysta SDK and releases' : 'edi releases';
+  for (const release of published.slice().reverse()) {
+    const key = project+':'+release.id;
+    const label = project === 'crysta' && /^build-[0-9a-f]{40}$/.test(release.tag)
+      ? 'crysta SDK '+release.tag.slice(6,13) : project+' '+release.tag;
+    group.append(new Option(label,key));
+    releases.set(key,{project,...release});
+  }
+  snapshots.append(group);
+}
 const statusSymbols = {pass:'✓',review:'!',fail:'×'};
 const statusLabels = {pass:'Within reference',review:'Review',fail:'Needs attention',missing:'No report'};
 const format = new Intl.NumberFormat('en', {maximumFractionDigits:1});
@@ -212,7 +239,11 @@ function averageFunctions(report) {
 function density(project, language, report) {
   const ratio = averageFunctions(report);
   if (ratio == null) return reading(null,densityReference);
-  const prior = data.projects[project].samples.slice(0,-1).reverse()
+  const record = data.projects[project];
+  const previous = selectedRelease
+    ? record.releases.filter(release=>release.published_at<selectedRelease.published_at).map(release=>release.sample)
+    : record.samples.slice(0,-1);
+  const prior = previous.slice().reverse()
     .map(sample=>averageFunctions(sample[metricsByLanguage[language]])).find(value=>value!=null);
   const change = prior > 0 ? Math.round((ratio/prior-1)*1e8)/1e6 : null;
   const detail = change == null ? 'No prior positive ratio for this project and language.'
@@ -317,8 +348,9 @@ function headingReferences(rows) {
   });
 }
 function renderCard(group, card) {
-  const rows = projects.map(project=>{
-    const snapshot = data.projects[project].samples.at(-1) ?? {};
+  const visibleProjects = selectedRelease ? [selectedRelease.project] : projects;
+  const rows = visibleProjects.map(project=>{
+    const snapshot = (selectedRelease ? selectedRelease.sample : data.projects[project].samples.at(-1)) ?? {};
     const results = languages.map(language=>card.read(project,language,snapshot,snapshot[metricsByLanguage[language]]));
     return {project,results};
   });
@@ -335,10 +367,6 @@ function renderCard(group, card) {
     '<span class="hint">'+card.hint+'</span><span class="help-mark" aria-hidden="true">i</span></button></h2><div class="readings">'+
     '<div class="language-head" aria-hidden="true"><div></div><div>'+heads+'</div></div>'+readings+'</div></article>';
 }
-document.querySelector('#demo-label').hidden = !data.demo;
-document.querySelector('#cards').innerHTML = Object.entries(groups)
-  .flatMap(([group,cards])=>cards.map(card=>renderCard(group,card))).join('');
-
 const tooltip = document.querySelector('#metric-tooltip');
 let activeTrigger;
 let pinned = false;
@@ -391,26 +419,28 @@ function scheduleClose() {
     closeTimer = setTimeout(hideTooltip,140);
   }
 }
-for (const trigger of document.querySelectorAll('.info-trigger')) {
-  trigger.addEventListener('pointerenter',event=>{
-    if (event.pointerType!=='touch' && !pinned && !tooltip.contains(document.activeElement)) showTooltip(trigger);
-  });
-  trigger.addEventListener('pointerleave',()=>{
-    if (activeTrigger===trigger) scheduleClose();
-  });
-  trigger.addEventListener('focus',()=>showTooltip(trigger));
-  trigger.addEventListener('blur',event=>{
-    if (activeTrigger===trigger && !tooltip.contains(event.relatedTarget) && !(pinned && !event.relatedTarget)) {
-      hideTooltip();
-    }
-  });
-  trigger.addEventListener('click',()=>{
-    if (activeTrigger===trigger && pinned) hideTooltip();
-    else {
-      showTooltip(trigger);
-      pinned = true;
-    }
-  });
+function bindTooltipTriggers() {
+  for (const trigger of document.querySelectorAll('.info-trigger')) {
+    trigger.addEventListener('pointerenter',event=>{
+      if (event.pointerType!=='touch' && !pinned && !tooltip.contains(document.activeElement)) showTooltip(trigger);
+    });
+    trigger.addEventListener('pointerleave',()=>{
+      if (activeTrigger===trigger) scheduleClose();
+    });
+    trigger.addEventListener('focus',()=>showTooltip(trigger));
+    trigger.addEventListener('blur',event=>{
+      if (activeTrigger===trigger && !tooltip.contains(event.relatedTarget) && !(pinned && !event.relatedTarget)) {
+        hideTooltip();
+      }
+    });
+    trigger.addEventListener('click',()=>{
+      if (activeTrigger===trigger && pinned) hideTooltip();
+      else {
+        showTooltip(trigger);
+        pinned = true;
+      }
+    });
+  }
 }
 tooltip.addEventListener('pointerenter',()=>clearTimeout(closeTimer));
 tooltip.addEventListener('pointerleave',scheduleClose);
@@ -433,6 +463,23 @@ document.addEventListener('keydown',event=>{
 });
 window.addEventListener('resize',positionTooltip);
 window.addEventListener('scroll',positionTooltip,{passive:true});
+
+function renderSnapshot() {
+  hideTooltip();
+  document.querySelector('main').after(tooltip);
+  selectedRelease = releases.get(snapshots.value);
+  tooltipContent.length = 0;
+  const cards = document.querySelector('#cards');
+  const label = selectedRelease ? selectedRelease.project+' '+selectedRelease.tag : 'crysta and edi main';
+  cards.setAttribute('aria-label','Metric cards for '+label);
+  cards.innerHTML = Object.entries(groups)
+    .flatMap(([group,metrics])=>metrics.map(card=>renderCard(group,card))).join('');
+  document.querySelector('#trends-link').textContent = selectedRelease ? 'Main-branch trends ↗' : 'Trends and components ↗';
+  bindTooltipTriggers();
+}
+document.querySelector('#demo-label').hidden = !data.demo;
+snapshots.addEventListener('change',renderSnapshot);
+renderSnapshot();
 </script>
 </body>
 </html>

@@ -3,8 +3,8 @@ name: edi coverage and static checks
 on:
   workflow_dispatch:
   schedule:
-    - cron: '15 7 * * 1'
-      timezone: Europe/Copenhagen
+    - cron: '15 7 * * *'
+      timezone: Europe/Stockholm
 
 permissions:
   contents: read

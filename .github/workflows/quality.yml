@@ -14,8 +14,10 @@ on:
     types: [completed]
     branches: [main]
   schedule:
-    - cron: '25 8 * * 1'
-      timezone: Europe/Copenhagen
+    - cron: '25 8 * * *'
+      timezone: Europe/Stockholm
+    - cron: '25 0-7,9-23 * * *'
+      timezone: Europe/Stockholm
 
 permissions:
   contents: read
@@ -28,7 +30,9 @@ jobs:
   build:
     if: github.ref == 'refs/heads/main' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 35
+    outputs:
+      refresh: ${{ steps.plan.outputs.refresh }}
     permissions:
       contents: read
       actions: read
@@ -50,8 +54,32 @@ jobs:
           repositories: crysta,edi
           permission-contents: read
           permission-actions: read
-      - name: Check out crysta main
+      - name: Read durable metrics history
         if: env.COLLECT_METRICS == 'true'
+        uses: actions/checkout@v5
+        with:
+          ref: metrics-history
+          path: history
+          persist-credentials: false
+      - name: Discover published releases
+        if: env.COLLECT_METRICS == 'true'
+        id: releases
+        env:
+          GH_TOKEN: ${{ steps.source-token.outputs.token }}
+        run: python3 scripts/releases.py --history history/snapshots.json --output "$RUNNER_TEMP/releases.json"
+      - name: Choose whether to refresh
+        id: plan
+        env:
+          RELEASE_CHECK: ${{ github.event_name == 'schedule' && github.event.schedule == '25 0-7,9-23 * * *' }}
+          RELEASE_CHANGED: ${{ steps.releases.outputs.changed }}
+        run: |
+          if [[ "$RELEASE_CHECK" == true && "$RELEASE_CHANGED" != true ]]; then
+            echo "refresh=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "refresh=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Check out crysta main
+        if: env.COLLECT_METRICS == 'true' && steps.plan.outputs.refresh == 'true'
         uses: actions/checkout@v5
         with:
           repository: enhantica/crysta
@@ -66,7 +94,7 @@ jobs:
             src/bindings
             lib/crysta
       - name: Check out edi main
-        if: env.COLLECT_METRICS == 'true'
+        if: env.COLLECT_METRICS == 'true' && steps.plan.outputs.refresh == 'true'
         uses: actions/checkout@v5
         with:
           repository: enhantica/edi
@@ -84,7 +112,7 @@ jobs:
             app/src
             assistant/native
       - name: Install BCA and Doxygen
-        if: env.COLLECT_METRICS == 'true'
+        if: env.COLLECT_METRICS == 'true' && steps.plan.outputs.refresh == 'true'
         env:
           BCA_VERSION: '2.6.0'
           BCA_SHA256: '53df050fad1e9bc9081fbe89bb216db7631633d4a741f5ea2e9c322ae9cc0864'
@@ -105,22 +133,8 @@ jobs:
           printf '%s  %s\n' "$DOXYGEN_SHA256" "$docs_tar" | sha256sum --check --strict -
           tar -xzf "$docs_tar" "$docs_bin/doxygen"
           echo "$RUNNER_TEMP/$docs_bin" >> "$GITHUB_PATH"
-      - name: Restore the last published set of snapshots
-        if: env.COLLECT_METRICS == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          mkdir -p history
-          run_id="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow quality.yml --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
-          if [[ -n "$run_id" ]]; then
-            artifact_id="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts" --jq '[.artifacts[] | select(.name == "quality-snapshots" and .expired == false)] | .[0].id // empty')"
-            if [[ -n "$artifact_id" ]]; then
-              gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name quality-snapshots --dir history
-            fi
-          fi
       - name: Read edi's aggregate report
-        if: env.COLLECT_METRICS == 'true'
+        if: env.COLLECT_METRICS == 'true' && steps.plan.outputs.refresh == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -132,14 +146,16 @@ jobs:
               gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name edi-measurements --dir history
             fi
           fi
-      - name: Collect public aggregates for both main branches
-        if: env.COLLECT_METRICS == 'true'
+      - name: Collect public aggregates for main branches and release tags
+        if: env.COLLECT_METRICS == 'true' && steps.plan.outputs.refresh == 'true'
         env:
           GH_TOKEN: ${{ steps.source-token.outputs.token }}
         run: >-
           python3 scripts/collect.py --crysta inputs/crysta --edi inputs/edi --docs --github
-          --history history/snapshots.json --edi-measurements history/edi.json --output history/snapshots.json
+          --history history/snapshots.json --edi-measurements history/edi.json
+          --release-catalogue "$RUNNER_TEMP/releases.json" --output history/snapshots.json
       - name: Render dashboard
+        if: steps.plan.outputs.refresh == 'true'
         run: |
           set -euo pipefail
           input=data/demo.json
@@ -147,7 +163,7 @@ jobs:
           python3 scripts/render.py --data "$input" --summary "$GITHUB_STEP_SUMMARY"
           python3 scripts/render.py --data "$input" --trends --output dist/trends.html
       - name: Retain aggregates for the next run
-        if: env.COLLECT_METRICS == 'true'
+        if: env.COLLECT_METRICS == 'true' && steps.plan.outputs.refresh == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: quality-snapshots
@@ -161,14 +177,42 @@ jobs:
           path: dist
           if-no-files-found: error
       - uses: actions/upload-pages-artifact@v3
-        if: inputs.collect_only != true
+        if: inputs.collect_only != true && steps.plan.outputs.refresh == 'true'
         with:
           path: dist
 
+  archive:
+    needs: build
+    if: needs.build.outputs.refresh == 'true' && vars.QUALITY_PUBLISH_LIVE == 'true' && inputs.collect_only != true
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: metrics-history
+      - uses: actions/download-artifact@v4
+        with:
+          name: quality-snapshots
+          path: incoming
+      - name: Keep normalized snapshots in Git
+        run: |
+          set -euo pipefail
+          cp incoming/snapshots.json snapshots.json
+          git add -- snapshots.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m "Record metrics from run $GITHUB_RUN_ID"
+          git push origin HEAD:refs/heads/metrics-history
+
   deploy:
     runs-on: ubuntu-24.04
-    needs: build
-    if: github.ref == 'refs/heads/main' && inputs.collect_only != true
+    needs: [build, archive]
+    if: >-
+      !cancelled() && needs.build.result == 'success' &&
+      (needs.archive.result == 'success' || needs.archive.result == 'skipped') &&
+      github.ref == 'refs/heads/main' && inputs.collect_only != true && needs.build.outputs.refresh == 'true'
     permissions:
       pages: write
       id-token: write

@@ -2,17 +2,20 @@
 """Collect commit-specific, publishable code metrics for crysta and edi."""
 import argparse
 import ast
+import base64
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 import json
 import math
+import os
 from pathlib import Path
 import re
 import statistics
 import subprocess
 from tempfile import TemporaryDirectory
 import xml.etree.ElementTree as ET
+from zoneinfo import ZoneInfo
 
 SCOPES = {
     "crysta": {
@@ -321,7 +324,7 @@ def merge_edi_measurements(sample, receipt, root):
     sample["checks_url"] = sample["coverage_url"]
 
 
-def collect(repo, root, bca, docs, from_github):
+def collect(repo, root, bca, docs, from_github, historical=False):
     scope = SCOPES[repo]
     sha = capture("git", "rev-parse", "HEAD", cwd=root).strip()
     tracked = {p for p in capture("git", "ls-files", "-z", "--", *scope, cwd=root).split("\0")
@@ -332,7 +335,8 @@ def collect(repo, root, bca, docs, from_github):
         raise ValueError(f"{repo} production scope differs from {sha}")
     with TemporaryDirectory() as temporary:
         report = Path(temporary) / "reports.json"
-        run_analyzer(bca, "metrics", *scope, "-O", "json", "--output", report, cwd=root)
+        roots = [path for path in scope if (root / path).is_dir()]
+        run_analyzer(bca, "metrics", *roots, "-O", "json", "--output", report, cwd=root)
         files = [record for record in json.loads(report.read_text()) if record["name"] in tracked]
     missing = tracked - {record["name"] for record in files}
     if missing:
@@ -345,16 +349,105 @@ def collect(repo, root, bca, docs, from_github):
         "python_static": summarize([record for record in files if record["name"] in python], scope, repo == "edi"),
         "python_docs": python_docs(root, python),
     }
-    if docs:
+    if docs and (not historical or (root / HEADERS[repo]).is_dir()):
         sample["docs"] = doxygen_counts(root, HEADERS[repo])
     if from_github:
         sample["checks"], sample["ci_url"] = test_results(repo, sha)
         sample.update(coverage_results(repo, sha))
-    manifest = capture("git", "show", f"{sha}:pyproject.toml", cwd=root)
-    sample["coverage_settings"] = coverage_targets(
-        repo, manifest, {key: sample[key] for key in ("coverage", "python") if key in sample},
-    )
+    if not historical or (root / "pyproject.toml").is_file():
+        manifest = capture("git", "show", f"{sha}:pyproject.toml", cwd=root)
+        sample["coverage_settings"] = coverage_targets(
+            repo, manifest, {key: sample[key] for key in ("coverage", "python") if key in sample},
+        )
     return sample
+
+
+def exact_evidence(sample, previous):
+    """Keep aggregate evidence on the exact commit after the underlying report expires."""
+    restored_coverage = not any(sample.get(key) for key in ("coverage", "python"))
+    for key in ("coverage", "python", "coverage_settings"):
+        if not sample.get(key) and previous.get(key):
+            sample[key] = previous[key]
+    if restored_coverage and previous.get("coverage_url") and any(
+        sample.get(key) for key in ("coverage", "python")
+    ):
+        sample["coverage_url"] = previous["coverage_url"]
+    if not sample.get("checks") or (
+        previous.get("checks_url") and not sample.get("checks_url")
+    ):
+        for key in ("checks", "checks_scope", "checks_url", "ci_url"):
+            if previous.get(key):
+                sample[key] = previous[key]
+
+
+def collect_releases(repo, catalogue, archived, known, bca, docs, from_github):
+    releases = {release["id"]: release for release in archived}
+    missing = {row["sha"] for row in catalogue if row["sha"] not in known}
+    if missing:
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            subprocess.run(["git", "init", "--quiet"], cwd=root, check=True)
+            subprocess.run(["git", "sparse-checkout", "set", "--cone", *SCOPES[repo]], cwd=root, check=True)
+            env = dict(os.environ, GIT_TERMINAL_PROMPT="0")
+            if token := env.get("GH_TOKEN"):
+                encoded = base64.b64encode(f"x-access-token:{token}".encode()).decode()
+                env["QUALITY_RELEASE_AUTH"] = f"AUTHORIZATION: basic {encoded}"
+            args = ["git"]
+            if token:
+                args.append("--config-env=http.extraHeader=QUALITY_RELEASE_AUTH")
+            # Fetch only commits resolved by the authenticated release catalogue.
+            result = subprocess.run(
+                [*args, "fetch", "--quiet", "--depth=1", "--no-tags",
+                 f"https://github.com/enhantica/{repo}.git", *sorted(missing)],
+                cwd=root, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
+            if result.returncode:
+                raise RuntimeError(f"Could not fetch exact {repo} release commits")
+            for sha in sorted(missing):
+                result = subprocess.run(
+                    ["git", "checkout", "--quiet", "--detach", sha], cwd=root,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                )
+                if result.returncode or capture("git", "rev-parse", "HEAD", cwd=root).strip() != sha:
+                    raise RuntimeError(f"Could not verify the {repo} release checkout")
+                try:
+                    known[sha] = collect(repo, root, bca, docs, from_github, historical=True)
+                except (ValueError, RuntimeError) as error:
+                    # Historic source layouts can lack a usable analysis scope.
+                    print(f"{repo} release analysis unavailable at {sha[:12]} ({type(error).__name__})")
+                    known[sha] = {"sha": sha, "unavailable": True}
+    for release in catalogue:
+        sample = known[release["sha"]]
+        previous = releases.get(release["id"], {})
+        if previous.get("sha") == release["sha"] and not previous["sample"].get("unavailable"):
+            # Keep the original source measurements and fill in later same-commit CI evidence.
+            sample = previous["sample"].copy()
+            exact_evidence(sample, known[release["sha"]])
+        releases[release["id"]] = {**release, "sample": sample}
+    return sorted(releases.values(), key=lambda row: (row["published_at"], row["id"]))
+
+
+def collect_project(repo, root, previous, catalogue, edi_measurements, bca, docs, from_github):
+    sample = collect(repo, root, bca, docs, from_github)
+    if repo == "edi":
+        merge_edi_measurements(sample, edi_measurements, root)
+    history = previous.get("samples", [])
+    archived = previous.get("releases", [])
+    known = {row["sha"]: row["sample"] for row in archived}
+    known.update({row["sha"]: row for row in history})
+    exact_evidence(sample, known.get(sample["sha"], {}))
+    known[sample["sha"]] = sample
+    zone = ZoneInfo("Europe/Stockholm")
+    day = datetime.fromisoformat(sample["date"]).astimezone(zone).date()
+    history = [
+        row for row in history
+        if row["sha"] != sample["sha"] or datetime.fromisoformat(row["date"]).astimezone(zone).date() != day
+    ]
+    return {
+        "branch": "main",
+        "samples": (history + [sample])[-90:],
+        "releases": collect_releases(repo, catalogue, archived, known, bca, docs, from_github),
+    }
 
 
 def main():
@@ -366,22 +459,25 @@ def main():
     parser.add_argument("--github", action="store_true")
     parser.add_argument("--history", type=Path)
     parser.add_argument("--edi-measurements", type=Path)
+    parser.add_argument("--release-catalogue", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     prev = json.loads(args.history.read_text()) if args.history and args.history.exists() else {}
     edi_measurements = (json.loads(args.edi_measurements.read_text())
                         if args.edi_measurements and args.edi_measurements.exists() else None)
+    catalogue = json.loads(args.release_catalogue.read_text()) if args.release_catalogue else {}
+    previous = prev.get("projects", {}) if prev.get("schema") == 1 else {}
     data = {"schema": 1, "demo": False, "projects": {}}
     with ThreadPoolExecutor() as pool:
-        jobs = {repo: pool.submit(collect, repo, getattr(args, repo).resolve(), args.bca, args.docs, args.github)
-                for repo in SCOPES}
+        jobs = {
+            repo: pool.submit(
+                collect_project, repo, getattr(args, repo).resolve(), previous.get(repo, {}),
+                catalogue.get(repo, []), edi_measurements, args.bca, args.docs, args.github,
+            )
+            for repo in SCOPES
+        }
         for repo, job in jobs.items():
-            sample = job.result()
-            if repo == "edi":
-                merge_edi_measurements(sample, edi_measurements, args.edi.resolve())
-            history = prev.get("projects", {}).get(repo, {}).get("samples", []) if prev.get("schema") == 1 else []
-            history = [row for row in history if row["sha"] != sample["sha"]]
-            data["projects"][repo] = {"branch": "main", "samples": (history + [sample])[-90:]}
+            data["projects"][repo] = job.result()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(data, indent=2, allow_nan=False)+"\n", encoding="utf-8")
 
