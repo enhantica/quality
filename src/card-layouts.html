@@ -97,7 +97,7 @@ const number = value => Number.isFinite(value) ? format.format(value) : '—';
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[character]);
 const color = (value, status = 'neutral', detail = '', counts = '') => ({
-  value:value ?? '—', status:value == null ? 'missing' : status, detail, counts,
+  value:value ?? 'No report', status:value == null ? 'missing' : status, detail, counts,
 });
 const basic = value => color(Number.isFinite(value) ? number(value) : null);
 function currentSnapshot(project) {
@@ -134,7 +134,7 @@ function complexity(language, report) {
 function analyzer(sample, language) {
   const tool = analysisByLanguage[language];
   const result = sample.checks?.[tool];
-  const statuses = {Clean:'pass',Passed:'pass',Failed:'fail',Partial:'review',Skipped:'missing'};
+  const statuses = {Clean:'pass',Passed:'pass',Failed:'fail',Partial:'review',Skipped:'missing',Cancelled:'missing'};
   return Object.hasOwn(statuses,result) ? color(result,statuses[result],tool) : color(null,'missing',tool);
 }
 function coverage(sample, key) {
@@ -160,10 +160,10 @@ const cards = [
 function resultCell(result, language) {
   const label = language ? labels[language]+' ' : '';
   const detail = result.detail ? ' title="'+escapeHtml(result.detail)+'"' : '';
-  const extra = ['Clean','Passed','Failed'].includes(result.value) ? '' : statusLabels[result.status];
+  const extra = ['Clean','Passed','Failed','No report'].includes(result.value) ? '' : statusLabels[result.status];
   return '<span class="result '+result.status+'"'+detail+'>'+
     '<span class="sr">'+label+'</span>'+
-    (result.status !== 'neutral' ? '<span class="mark" aria-hidden="true">'+statusSymbols[result.status]+' </span>' : '')+
+    (result.status !== 'neutral' && result.value !== 'No report' ? '<span class="mark" aria-hidden="true">'+statusSymbols[result.status]+' </span>' : '')+
     '<span class="value">'+escapeHtml(result.value)+'</span>'+
     (result.counts ? '<span class="counts">'+escapeHtml(result.counts)+'</span>' : '')+
     (extra ? '<span class="sr"> '+extra+'</span>' : '')+'</span>';

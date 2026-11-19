@@ -36,8 +36,8 @@ SCOPES = {
 HEADERS = {"crysta": "include/crysta", "edi": "core/include/edi"}
 CXX_SUFFIXES = {".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".hxx"}
 CHECKS = {
-    "Clang static analysis": re.compile("clang-tidy", re.I),
-    "Ruff": re.compile(r"\bruff\b", re.I),
+    "Clang static analysis": re.compile(r"^clang-tidy\b", re.I),
+    "Ruff": re.compile(r"^ruff\b", re.I),
     "Sanitizer tests": re.compile(r"addresssanitizer|threadsanitizer|asan|ubsan|sanitized", re.I),
     "Docs build": re.compile(r"docs.build|mkdocs", re.I),
 }
@@ -175,10 +175,15 @@ def test_results(repo, sha):
     for label, pattern in CHECKS.items():
         conclusions = {step["conclusion"] for step in steps if pattern.search(step["name"])}
         useful = conclusions - {"skipped", None}
-        if useful:
-            result[label] = ("Failed" if "failure" in useful else
-                             "Passed" if useful == {"success"} and "skipped" not in conclusions else
-                             "Partial")
+        if "failure" in useful:
+            result[label] = "Failed"
+        elif useful == {"success"}:
+            # Ruff is platform-independent. The other matrix leg may skip it by design.
+            result[label] = "Passed" if label == "Ruff" or "skipped" not in conclusions else "Partial"
+        elif useful == {"cancelled"} or (not useful and run["conclusion"] == "cancelled"):
+            result[label] = "Cancelled"
+        elif useful:
+            result[label] = "Partial"
         elif conclusions:
             result[label] = "Skipped"
     return result, run["url"]
@@ -205,7 +210,7 @@ def parse_coverage(repo, directory):
     return results
 
 
-def coverage_results(repo, sha):
+def coverage_results(repo, sha, root):
     run = workflow_run(repo, sha, "coverage.yml", "workflow_dispatch")
     if not run:
         return {}
@@ -218,7 +223,21 @@ def coverage_results(repo, sha):
         if any(a["name"] == "unit-coverage" and not a["expired"] for a in artifacts["artifacts"]):
             capture("gh", "run", "download", str(run["databaseId"]), "--repo", f"enhantica/{repo}",
                     "--name", "unit-coverage", "--dir", temporary)
-            receipt.update(parse_coverage(repo, Path(temporary)))
+            import tomllib
+
+            reports = parse_coverage(repo, Path(temporary))
+            if reports:
+                config = tomllib.loads(capture("git", "show", "HEAD:pyproject.toml", cwd=root))["tool"]
+                thresholds = config.get(repo, {}).get("coverage", {})
+                targets = {
+                    "coverage": thresholds.get("cpp_lines_min"),
+                    "python": (thresholds.get("python_surface_min") if repo == "crysta"
+                               else config.get("coverage", {}).get("report", {}).get("fail_under")),
+                }
+                for key, report in reports.items():
+                    if type(targets[key]) in (int, float):
+                        report["target"] = targets[key]
+            receipt.update(reports)
     return receipt
 
 
@@ -250,7 +269,7 @@ def collect(repo, root, bca, docs, from_github):
         sample["docs"] = doxygen_counts(root, HEADERS[repo])
     if from_github:
         sample["checks"], sample["ci_url"] = test_results(repo, sha)
-        sample.update(coverage_results(repo, sha))
+        sample.update(coverage_results(repo, sha, root))
     return sample
 
 
