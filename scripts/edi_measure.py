@@ -6,9 +6,7 @@ from pathlib import Path
 import re
 import subprocess
 from tempfile import TemporaryDirectory
-import xml.etree.ElementTree as ET
-
-from collect import capture, coverage_targets, parse_coverage
+from collect import capture, coverage_targets, parse_coverage, successful_tests
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -45,15 +43,6 @@ def tidy_core(root, run_check):
                         "-extra-arg=-Wno-unknown-warning-option", rf"(?!^(?:{exclusions})$)^{owned}"],
                        "clang.log")
     return "Passed" if status == 0 else "Failed"
-
-
-def successful_tests(report):
-    if not report.is_file():
-        return False
-    suites = ET.parse(report).findall(".//testsuite")
-    return bool(suites) and sum(int(s.get("tests", 0)) - int(s.get("skipped", 0)) for s in suites) > 0 and all(
-        int(s.get("failures", 0)) == int(s.get("errors", 0)) == 0 for s in suites
-    )
 
 
 def measure(edi, crysta, scratch):

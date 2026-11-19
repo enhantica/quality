@@ -232,6 +232,15 @@ def parse_coverage(repo, directory):
     return results
 
 
+def successful_tests(report):
+    if not report.is_file():
+        return False
+    suites = ET.parse(report).findall(".//testsuite")
+    return bool(suites) and sum(int(s.get("tests", 0)) - int(s.get("skipped", 0)) for s in suites) > 0 and all(
+        int(s.get("failures", 0)) == int(s.get("errors", 0)) == 0 for s in suites
+    )
+
+
 def coverage_targets(repo, manifest, reports):
     config = tomllib.loads(manifest)["tool"]
     thresholds = config.get(repo, {}).get("coverage", {})

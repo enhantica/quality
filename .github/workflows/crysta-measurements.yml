@@ -1,0 +1,91 @@
+name: crysta SDK measurements
+run-name: crysta SDK ${{ inputs.pin }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      pin:
+        description: Full crysta SHA recorded for an edi snapshot
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-crysta-${{ inputs.pin }}
+  cancel-in-progress: false
+
+jobs:
+  measure:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      CRYSTA_PIN: ${{ inputs.pin }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v5
+        with:
+          ref: metrics-history
+          path: history
+          persist-credentials: false
+      - name: Verify the pin belongs to an edi snapshot
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+          pin = os.environ["CRYSTA_PIN"]
+          edi = json.loads(Path("history/snapshots.json").read_text())["projects"]["edi"]
+          snapshots = [*edi["samples"], *(row["sample"] for row in edi["releases"])]
+          if not re.fullmatch("[0-9a-f]{40}", pin) or not any(
+              row.get("crysta_pin") == pin for row in snapshots
+          ):
+              raise SystemExit("The requested commit is missing from edi's recorded SDK pins")
+          PY
+      - name: Authorize the private checkout
+        id: source-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.QUALITY_APP_ID || vars.ENHANTICA_APP_ID }}
+          private-key: ${{ secrets.QUALITY_APP_KEY || secrets.ENHANTICA_APP_KEY }}
+          owner: enhantica
+          repositories: crysta
+          permission-contents: read
+      - uses: actions/checkout@v5
+        with:
+          repository: enhantica/crysta
+          ref: ${{ inputs.pin }}
+          path: inputs/crysta
+          token: ${{ steps.source-token.outputs.token }}
+          persist-credentials: false
+      - uses: prefix-dev/setup-pixi@v0.9.6
+        with:
+          pixi-version: v0.76.2
+          manifest-path: inputs/crysta/pixi.toml
+          run-install: false
+          cache: false
+          cache-write: false
+          post-cleanup: false
+      - name: Realize the frozen toolchain
+        run: python3 -u scripts/crysta_measure.py install
+      - name: clang-tidy
+        run: python3 -u scripts/crysta_measure.py clang
+      - name: Ruff lint and format
+        run: python3 -u scripts/crysta_measure.py ruff
+      - name: C++ unit coverage
+        run: python3 -u scripts/crysta_measure.py coverage
+      - name: Python API coverage
+        run: python3 -u scripts/crysta_measure.py python
+      - name: Build aggregate receipt
+        run: python3 -u scripts/crysta_measure.py assemble
+      - name: Retain only the normalized receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: crysta-measurements-${{ inputs.pin }}
+          path: measurement/crysta.json
+          if-no-files-found: error
