@@ -32,3 +32,9 @@ python3 scripts/collect.py --crysta /path/to/crysta --edi /path/to/edi --output 
 python3 scripts/render.py --data /tmp/quality.json
 python3 scripts/render.py --data /tmp/quality.json --trends --output dist/trends.html
 ```
+
+### Dashboard colors
+
+Green marks a passed check or a value within its target or advisory reference. Amber flags a value for review. Red identifies a failed check. Blue marks measured counts and other values without targets. Gray marks unavailable results.
+
+Function P90 references are presentation defaults and do not change product CI gates. The dashboard starts with McCabe complexity at 12 for C++ and 10 for Python, cognitive complexity at 15, function length at 50 physical lines, arguments at 5, and explicit exits at 8. The median file MI uses the Visual Studio green boundary of 20. Functions per file is a measured ratio, with a review signal for an increase above 10% from the previous sample. Test coverage keeps each producer's declared target.

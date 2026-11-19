@@ -11,7 +11,7 @@
   --font-title:28px;--font-metric:16px;--font-meta:12px;
   --page:#252525; --card:#1b1b1b; --cap:#202020; --line:#393939;
   --strong:#e0e0e0; --text:#ccc; --muted:#aaa;
-  --pass:#89c65b; --review:#f6ab43; --fail:#ef8881; --missing:#999;
+  --pass:#89c65b; --review:#f6ab43; --fail:#ef8881; --missing:#999; --info:#8dbce8;
 }
 * {box-sizing:border-box}
 body {margin:0;background:var(--page);color:var(--text);font:var(--font-metric)/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
@@ -49,6 +49,7 @@ a:focus-visible {outline:2px solid var(--review);outline-offset:2px}
 .review {--tone:var(--review)}
 .fail {--tone:var(--fail)}
 .missing {--tone:var(--missing)}
+.measured {--tone:var(--info)}
 .project {color:var(--tone,var(--text))}
 .value {font-size:var(--font-metric);color:var(--tone,var(--strong));font-variant-numeric:tabular-nums;white-space:nowrap}
 .mark {width:12px;flex:none;text-align:center;font-size:var(--font-meta);color:var(--tone,var(--muted))}
@@ -77,6 +78,7 @@ a:focus-visible {outline:2px solid var(--review);outline-offset:2px}
       <li class="pass"><b aria-hidden="true">✓</b>Within target</li>
       <li class="review"><b aria-hidden="true">!</b>Review</li>
       <li class="fail"><b aria-hidden="true">×</b>Failed</li>
+      <li class="measured"><b aria-hidden="true">•</b>Measured</li>
       <li class="missing"><b aria-hidden="true">–</b>No report</li>
     </ul>
     <a href="trends.html">Trends and components ↗</a>
@@ -96,10 +98,32 @@ const format = new Intl.NumberFormat('en', {maximumFractionDigits:1});
 const number = value => Number.isFinite(value) ? format.format(value) : '—';
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[character]);
-const color = (value, status = 'neutral', detail = '', counts = '') => ({
+const color = (value, status = 'measured', detail = '', counts = '') => ({
   value:value ?? 'No report', status:value == null ? 'missing' : status, detail, counts,
 });
 const basic = value => color(Number.isFinite(value) ? number(value) : null);
+const reviewLimits = {
+  p90: {cpp:12,python:10},
+  p90_cognitive: 15,
+  p90_length: 50,
+  p90_arguments: 5,
+  p90_exits: 8,
+};
+function limitFor(metric, language) {
+  const limit = reviewLimits[metric];
+  return typeof limit === 'number' ? limit : limit?.[language];
+}
+function functionMetric(source, key, language) {
+  const value = source?.[key];
+  if (!Number.isFinite(value)) return color(null);
+  const limit = limitFor(key, language);
+  return color(number(value),value<=limit?'pass':'review','P90 · advisory reference ≤ '+limit);
+}
+function maintainability(source) {
+  const value = source?.mi;
+  if (!Number.isFinite(value)) return color(null);
+  return color(number(value),value>=20?'pass':'review','Median file MI · Visual Studio reference, green at 20 or above');
+}
 function currentSnapshot(project) {
   return data.projects[project].samples.at(-1) ?? {};
 }
@@ -114,22 +138,11 @@ function density(project, language, report) {
   const previous = earlier.map(sample=>averageFunctions(sample[sourceKey])).find(value=>value!=null);
   const reference = Number.isFinite(previous) ? 'Previous measured ratio: '+number(previous) : 'No previous measured ratio';
   const drift = previous > 0 ? (ratio/previous-1)*100 : null;
-  const threshold = data.demo ? data.demoTargets?.densityIncrease : data.densityReviewIncrease;
+  const threshold = 10;
   const flag = drift != null && Number.isFinite(threshold) && drift > threshold;
-  return color(number(ratio),flag?'review':'neutral',
+  return color(number(ratio),flag?'review':'measured',
     number(report.functions)+' functions / '+number(report.files)+' files. '+reference+(drift == null ? '' : '. Change: '+number(drift)+'%.')+(Number.isFinite(threshold) ? ' Review above a '+threshold+'% increase.' : ''),
     number(report.functions)+'/'+number(report.files));
-}
-function complexityTarget(language) {
-  return data.demo ? data.demoTargets?.complexity?.[language] : data.complexityTargets?.[language];
-}
-function complexity(language, report) {
-  const score = report?.p90;
-  if (!Number.isFinite(score)) return color(null);
-  const target = complexityTarget(language);
-  return Number.isFinite(target)
-    ? color(number(score),score<=target?'pass':'review','90th percentile McCabe. Target ≤ '+target)
-    : color(number(score),'neutral','90th percentile McCabe. No target configured.');
 }
 function analyzer(sample, language) {
   const tool = analysisByLanguage[language];
@@ -142,24 +155,24 @@ function coverage(sample, key) {
   if (!(report?.total > 0)) return color(null);
   const value = report.covered*100/report.total;
   const target = report.target ?? (data.demo ? data.demoTargets?.coverage?.[key] : null);
-  const status = Number.isFinite(target) ? (value>=target ? 'pass' : 'review') : 'neutral';
+  const status = Number.isFinite(target) ? (value>=target ? 'pass' : 'review') : 'measured';
   return color(number(value)+'%',status,
     number(report.covered)+' of '+number(report.total)+(Number.isFinite(target) ? '. Target ≥ '+target+'%' : ''));
 }
 const cards = [
   {icon:'quality',name:'Code quality',help:'Clang static analysis for C++; Ruff for Python',read:(project,language,sample)=>analyzer(sample,language)},
-  {icon:'quality',name:'Maintainability index',hint:'File median',help:'BCA · file median, Visual Studio MI scale (0–100)',read:(project,language,sample,source)=>basic(source?.mi)},
-  {icon:'quality',name:'Cyclomatic complexity',complexity:true,help:'BCA · 90th percentile of function McCabe scores',read:(project,language,sample,source)=>complexity(language,source)},
+  {icon:'quality',name:'Maintainability index',hint:'File median',help:'BCA · file median, Visual Studio MI scale (0–100)',read:(project,language,sample,source)=>maintainability(source)},
+  {icon:'quality',name:'Cyclomatic complexity',percentile:'p90',help:'BCA · 90th percentile of function McCabe scores',read:(project,language,sample,source)=>functionMetric(source,'p90',language)},
   {icon:'size',name:'Physical code lines',help:'BCA · physical code lines excluding blank and comment-only lines',read:(project,language,sample,source)=>basic(source?.components?.reduce((sum,item)=>sum+item.lines,0))},
   {icon:'size',name:'Logical lines',help:'BCA · logical lines of code',read:(project,language,sample,source)=>basic(source?.logical)},
-  {icon:'size',name:'Functions / files',help:'Functions per file, with the function and file counts beside it. Amber marks a rise of more than 10% from the previous measured ratio in this demo.',read:(project,language,sample,source)=>density(project,language,source)},
+  {icon:'size',name:'Functions / files',help:'Functions per file, with the function and file counts beside it. Amber marks a rise of more than 10% from the previous measured ratio.',read:(project,language,sample,source)=>density(project,language,source)},
   {icon:'coverage',name:'C++ unit-test coverage',help:'LLVM · instrumented C++ unit tiers',fixed:'coverage'},
   {icon:'coverage',name:'Python test coverage',help:'crysta public API entries · edi statements in lib/edi',fixed:'python'},
   {icon:'coverage',name:'C++ API documentation',help:'Doxygen · documented public header symbols',fixed:'docs'},
-  {icon:'quality',name:'Cognitive complexity',hint:'P90',help:'BCA · 90th percentile of function cognitive complexity',read:(project,language,sample,source)=>basic(source?.p90_cognitive)},
-  {icon:'size',name:'Function length',hint:'P90',help:'BCA · 90th percentile of physical code lines per function',read:(project,language,sample,source)=>basic(source?.p90_length)},
-  {icon:'size',name:'Function arguments',hint:'P90',help:'BCA · 90th percentile of arguments per callable as counted by BCA',read:(project,language,sample,source)=>basic(source?.p90_arguments)},
-  {icon:'size',name:'Function exits',hint:'P90',help:'BCA · 90th percentile of explicit exits per function',read:(project,language,sample,source)=>basic(source?.p90_exits)},
+  {icon:'quality',name:'Cognitive complexity',percentile:'p90_cognitive',help:'BCA · 90th percentile of function cognitive complexity',read:(project,language,sample,source)=>functionMetric(source,'p90_cognitive',language)},
+  {icon:'size',name:'Function length',percentile:'p90_length',help:'BCA · 90th percentile of physical code lines per function',read:(project,language,sample,source)=>functionMetric(source,'p90_length',language)},
+  {icon:'size',name:'Function arguments',percentile:'p90_arguments',help:'BCA · 90th percentile of arguments per callable as counted by BCA',read:(project,language,sample,source)=>functionMetric(source,'p90_arguments',language)},
+  {icon:'size',name:'Function exits',percentile:'p90_exits',help:'BCA · 90th percentile of explicit exits per function',read:(project,language,sample,source)=>functionMetric(source,'p90_exits',language)},
   {icon:'coverage',name:'Documentation lines',help:'BCA · total lines in documentation comments and docstrings',read:(project,language,sample,source)=>basic(source?.documentation_lines)},
 ];
 function resultCell(result, language) {
@@ -168,7 +181,7 @@ function resultCell(result, language) {
   const extra = ['Clean','Passed','Failed','No report'].includes(result.value) ? '' : statusLabels[result.status];
   return '<span class="result '+result.status+'"'+detail+'>'+
     '<span class="sr">'+label+'</span>'+
-    (result.status !== 'neutral' && result.value !== 'No report' ? '<span class="mark" aria-hidden="true">'+statusSymbols[result.status]+' </span>' : '')+
+    (Object.hasOwn(statusSymbols,result.status) && result.value !== 'No report' ? '<span class="mark" aria-hidden="true">'+statusSymbols[result.status]+' </span>' : '')+
     '<span class="value">'+escapeHtml(result.value)+'</span>'+
     (result.counts ? '<span class="counts">'+escapeHtml(result.counts)+'</span>' : '')+
     (extra ? '<span class="sr"> '+extra+'</span>' : '')+'</span>';
@@ -195,13 +208,13 @@ function render() {
   document.querySelector('#cards').innerHTML = cards.map(card=>{
     const both = !card.fixed && languages.length>1;
     const columnLabel = language => {
-      const target = card.complexity ? complexityTarget(language) : null;
+      const target = limitFor(card.percentile, language);
       return labels[language]+(Number.isFinite(target) ? ' ≤ '+target : '');
     };
     const heads = both ? '<div class="language-head" aria-hidden="true"><div></div><div>'+
       languages.map(language=>'<span>'+columnLabel(language)+'</span>').join('')+'</div></div>' : '';
-    const target = card.complexity && !both ? complexityTarget(active) : null;
-    const caption = card.complexity ? 'P90'+(Number.isFinite(target) ? ' ≤ '+target : '') : card.hint;
+    const target = both ? null : limitFor(card.percentile,active);
+    const caption = card.percentile ? 'P90'+(Number.isFinite(target) ? ' ≤ '+target : '') : card.hint;
     const hint = caption ? '<span class="hint">'+caption+'</span>' : '';
     return '<article class="card'+(both?' is-both':'')+'" title="'+escapeHtml(card.help)+'"><h2>'+
       '<span class="icon icon-'+card.icon+'" aria-hidden="true"></span>'+card.name+hint+'</h2>'+
