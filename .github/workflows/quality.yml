@@ -201,7 +201,7 @@ jobs:
 
   queue-crysta:
     needs: archive
-    if: github.event.workflow_run.name != 'crysta SDK measurements'
+    if: github.event_name != 'workflow_run'
     runs-on: ubuntu-24.04
     permissions:
       contents: read

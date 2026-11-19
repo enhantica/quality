@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import re
 
-from collect import capture
+from collect import capture, crysta_analyzers_measured
 
 WORKFLOW = "crysta-measurements.yml"
 
@@ -45,7 +45,7 @@ def download(repo, snapshots, directory):
             received.add(pin)
 
 
-def queue(repo, pending):
+def queue(repo, pending, snapshots):
     if not pending:
         return
     active = {measurement_pin(run) for run in workflow_runs(repo) if run["status"] != "completed"}
@@ -53,7 +53,10 @@ def queue(repo, pending):
         if not re.fullmatch(r"[0-9a-f]{40}", pin):
             raise ValueError("Invalid pending SDK pin")
         if pin not in active:
-            capture("gh", "workflow", "run", WORKFLOW, "--repo", repo, "--ref", "main", "-f", f"pin={pin}")
+            sample = snapshots[pin]
+            python_only = sample.get("coverage", {}).get("total") and crysta_analyzers_measured(sample)
+            fields = ["-f", "python_only=true"] if python_only else []
+            capture("gh", "workflow", "run", WORKFLOW, "--repo", repo, "--ref", "main", "-f", f"pin={pin}", *fields)
             print(f"Queued crysta SDK {pin[:7]}")
 
 
@@ -66,7 +69,7 @@ def main():
     args = parser.parse_args()
     archive = json.loads(args.history.read_text())["projects"]["crysta"]
     if args.action == "queue":
-        queue(args.repo, archive.get("pending_measurements", []))
+        queue(args.repo, archive.get("pending_measurements", []), archive.get("pins", {}))
     else:
         if args.directory is None:
             parser.error("--directory is required for download")

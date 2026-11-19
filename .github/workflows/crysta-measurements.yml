@@ -8,6 +8,10 @@ on:
         description: Full crysta SHA recorded for an edi snapshot
         type: string
         required: true
+      python_only:
+        description: Retry Python coverage while retaining prior measurements
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -23,6 +27,7 @@ jobs:
     timeout-minutes: 75
     env:
       CRYSTA_PIN: ${{ inputs.pin }}
+      CRYSTA_PYTHON_ONLY: ${{ inputs.python_only }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -56,13 +61,10 @@ jobs:
           owner: enhantica
           repositories: crysta
           permission-contents: read
-      - uses: actions/checkout@v5
-        with:
-          repository: enhantica/crysta
-          ref: ${{ inputs.pin }}
-          path: inputs/crysta
-          token: ${{ steps.source-token.outputs.token }}
-          persist-credentials: false
+      - name: Prepare the private checkout and main ancestry
+        env:
+          CRYSTA_SOURCE_TOKEN: ${{ steps.source-token.outputs.token }}
+        run: python3 -u scripts/crysta_measure.py checkout
       - uses: prefix-dev/setup-pixi@v0.9.6
         with:
           pixi-version: v0.76.2
@@ -74,10 +76,13 @@ jobs:
       - name: Realize the frozen toolchain
         run: python3 -u scripts/crysta_measure.py install
       - name: clang-tidy
+        if: '!inputs.python_only'
         run: python3 -u scripts/crysta_measure.py clang
       - name: Ruff lint and format
+        if: '!inputs.python_only'
         run: python3 -u scripts/crysta_measure.py ruff
       - name: C++ unit coverage
+        if: '!inputs.python_only'
         run: python3 -u scripts/crysta_measure.py coverage
       - name: Python API coverage
         run: python3 -u scripts/crysta_measure.py python

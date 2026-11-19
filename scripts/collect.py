@@ -420,25 +420,36 @@ def merge_crysta_measurements(sample, receipt):
         reports[key] = {"covered": covered, "total": total}
         if setting := sample.get("coverage_settings", {}).get(key):
             reports[key]["target"] = setting["target"]
-    checks = {name: receipt["checks"][name] for name in ("Clang static analysis", "Ruff")}
-    if any(value not in {"Passed", "Failed"} for value in checks.values()):
+    checks = receipt["checks"]
+    if set(checks) - {"Clang static analysis", "Ruff"} or any(
+        value not in {"Passed", "Failed"} for value in checks.values()
+    ):
         raise ValueError("Invalid crysta analyzer outcome")
+    if not checks and not reports:
+        raise ValueError("Empty crysta measurement receipt")
 
     url = f"https://github.com/enhantica/quality/actions/runs/{run_id}"
-    sample.update(reports, measurement_run=run_id, checks_url=url)
-    sample["checks"] = sample.get("checks", {}) | checks
-    sample["checks_scope"] = {
-        "Clang static analysis": "Pinned SDK's Linux clang-tidy task",
-        "Ruff": "Pinned SDK's Ruff lint and format checks",
-    }
+    sample.update(reports, measurement_run=run_id)
+    if checks:
+        sample["checks_url"] = url
+        sample["checks"] = sample.get("checks", {}) | checks
+        sample["checks_scope"] = {
+            "Clang static analysis": "Pinned SDK's Linux clang-tidy task",
+            "Ruff": "Pinned SDK's Ruff lint and format checks",
+        }
     if reports:
         sample["coverage_url"] = url
+        sample["coverage_sources"] = sample.get("coverage_sources", {}) | {key: url for key in reports}
+
+
+def crysta_analyzers_measured(sample):
+    return all(
+        sample.get("checks", {}).get(name) in {"Passed", "Failed"} for name in ("Clang static analysis", "Ruff")
+    )
 
 
 def complete_crysta_measurements(sample):
-    return all(sample.get(key, {}).get("total") for key in ("coverage", "python")) and all(
-        sample.get("checks", {}).get(name) in {"Passed", "Failed"} for name in ("Clang static analysis", "Ruff")
-    )
+    return all(sample.get(key, {}).get("total") for key in ("coverage", "python")) and crysta_analyzers_measured(sample)
 
 
 def fetch_commits(repo, commits, root, local_source=None):
