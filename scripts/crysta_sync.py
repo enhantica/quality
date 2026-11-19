@@ -22,13 +22,23 @@ def measurement_pin(run):
     return title[1] if title else None
 
 
+def measure_job_succeeded(repo, run):
+    if run["conclusion"] == "success":
+        return True
+    # The producer dispatches publication after the measure job succeeds.
+    # Its separate publication job may still be active when the import starts.
+    run_id = run["databaseId"]
+    jobs = json.loads(capture("gh", "api", f"repos/{repo}/actions/runs/{run_id}/jobs"))
+    return any(job["name"] == "measure" and job["conclusion"] == "success" for job in jobs["jobs"])
+
+
 def download(repo, snapshots, directory):
     # Select the newest available receipt for each exact pin. Archived receipts
     # continue to work after their original Actions artifacts have expired.
     received = set()
     for run in workflow_runs(repo):
         pin = measurement_pin(run)
-        if pin not in snapshots or pin in received or run["conclusion"] != "success":
+        if pin not in snapshots or pin in received:
             continue
         run_id = run["databaseId"]
         if run_id <= snapshots[pin].get("measurement_run", 0):
@@ -36,7 +46,9 @@ def download(repo, snapshots, directory):
             continue
         name = f"crysta-measurements-{pin}"
         artifacts = json.loads(capture("gh", "api", f"repos/{repo}/actions/runs/{run_id}/artifacts"))
-        if any(item["name"] == name and not item["expired"] for item in artifacts["artifacts"]):
+        if any(item["name"] == name and not item["expired"] for item in artifacts["artifacts"]) and (
+            measure_job_succeeded(repo, run)
+        ):
             target = directory / pin
             capture("gh", "run", "download", str(run_id), "--repo", repo, "--name", name, "--dir", str(target))
             receipt = json.loads((target / "crysta.json").read_text())

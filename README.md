@@ -63,6 +63,6 @@ The C++ figure uses edi's instrumented core unit tier. Python uses the unit tier
 
 ### crysta SDK measurement workflow
 
-The dashboard queues **crysta SDK measurements** for newly observed pins and for the active edi main and latest release pins when their recorded checks or coverage are incomplete. A completed receipt triggers a dashboard refresh. An Actions dispatch can also measure any full crysta SHA already recorded as a pin in edi's snapshot history.
+The dashboard queues **crysta SDK measurements** for newly observed pins and for the active edi main and latest release pins when their recorded checks or coverage are incomplete. After uploading a receipt, the measurement workflow dispatches a dashboard refresh. An Actions dispatch can also measure any full crysta SHA already recorded as a pin in edi's snapshot history. When only Python coverage is missing, the retry keeps the earlier check and C++ results.
 
 The workflow uses the pinned crysta commit's Linux clang-tidy, Ruff lint and format, LLVM C++ unit coverage, and narrow Python public API coverage tasks. Its private checkout, test output, and compiler logs stay on the ephemeral runner. The sole uploaded receipt contains the commit, the run ID, two check outcomes, and available aggregate coverage counts.

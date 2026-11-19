@@ -9,8 +9,12 @@ on:
         description: Collect metrics as an Actions artifact without deploying Pages
         type: boolean
         default: false
+      sdk_refresh:
+        description: Publish a completed SDK receipt without queuing new measurements
+        type: boolean
+        default: false
   workflow_run:
-    workflows: [edi coverage and static checks, crysta SDK measurements]
+    workflows: [edi coverage and static checks]
     types: [completed]
     branches: [main]
   schedule:
@@ -201,7 +205,7 @@ jobs:
 
   queue-crysta:
     needs: archive
-    if: github.event_name != 'workflow_run'
+    if: github.event_name != 'workflow_run' && inputs.sdk_refresh != true
     runs-on: ubuntu-24.04
     permissions:
       contents: read
