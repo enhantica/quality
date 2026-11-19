@@ -35,12 +35,12 @@ python3 scripts/render.py --data /tmp/quality.json --trends --output dist/trends
 
 ### Dashboard colors
 
-Hover over, focus, or tap a card heading or value to see its definition and color bands. Green marks a passed check or a value within its reference. Amber flags a value for review. Red flags a failed check or a value that warrants attention. Blue marks measurements without a target. Gray marks unavailable results.
+Hover over, focus, or tap a card heading or value to see its definition, color bands, and the source of each cutoff. Green marks a passed check or a value within its reference. Amber flags a value for review. Red flags a failed check or a value that warrants attention. Blue marks measurements without a target. Gray marks unavailable results.
 
 - BCA's median file maintainability index is a score on the 0–100 scale. This view uses the [Visual Studio reference](https://learn.microsoft.com/en-us/visualstudio/code-quality/code-metrics-maintainability-index-range-and-meaning), with green at 20 or higher, amber from 10 to below 20, and red below 10.
 - Test coverage uses each producer's declared CI target. It is green at or above the target and red below it.
 - API documentation coverage uses dashboard advisory bands. It is green at 80% or higher, amber from 50% to below 80%, and red below 50%. The adjacent documentation-line count is blue.
-- Function P90 advisory limits are at most 12 for C++ McCabe complexity, 10 for Python McCabe complexity, 15 for cognitive complexity, 50 physical lines, 5 arguments, and 8 explicit exits. Green is within the limit and amber is above it.
+- Function P90 is green at or below its reference and amber above it. The dashboard uses **10** for cyclomatic complexity from [NIST SP 500-235, §2.5](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication500-235.pdf#page=25), **25 for C++ and 15 for Python** cognitive complexity from [SonarSource S3776](https://community.sonarsource.com/t/cognitive-complexity-for-python-vs-c/45303), and **5 arguments and 5 explicit exits** from the [BCA 2.6.0 defaults](https://github.com/dekobon/big-code-analysis/blob/v2.6.0/big-code-analysis-cli/src/default_thresholds.rs). These published per-function references are applied to BCA’s 90th-percentile summaries. The **50 physical code lines** reference for function length is dashboard policy.
 - Functions per file is green for an increase of at most 10% against the previous ratio and amber for larger increases. It is blue when there is no prior positive ratio for the same project and language. The function and file counts are blue.
 
 ### edi measurement workflow

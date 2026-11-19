@@ -108,11 +108,21 @@ const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[character]);
 
 const band = (tone, range, note) => ({tone, range, note});
+const rangeSources = {
+  visualStudio:'Tool reference · Visual Studio',
+  sonar:'Tool reference · SonarSource S3776',
+  bca:'Tool reference · BCA 2.6.0 defaults',
+  nist:'Published guideline · NIST SP 500-235 §2.5',
+  ci:'Project CI · pyproject.toml',
+  dashboard:'Dashboard policy',
+};
 const measured = {
+  source:'BCA measurement · no cutoff',
   bands:[band('measured','Measured count','Size or volume. No target applies.')],
   grade:()=> 'measured',
 };
 const checks = {
+  source:'Project CI · clang-tidy and Ruff results',
   bands:[
     band('pass','Passed','The selected analysis completed successfully.'),
     band('review','Partial','Only part of the selected analysis completed.'),
@@ -120,34 +130,35 @@ const checks = {
     band('missing','Unavailable','No result, skipped, or cancelled.'),
   ],
 };
-function atLeast(green, amber, unit, notes) {
+function atLeast(green, amber, unit, source, notes) {
   const target = '≥ '+number(green)+unit;
   const bands = [band('pass',target,notes.pass)];
   if (amber != null) bands.push(band('review',number(amber)+unit+' to < '+number(green)+unit,notes.review));
   bands.push(band('fail','< '+number(amber ?? green)+unit,notes.fail));
-  return {target, bands, grade:value=>value>=green ? 'pass' : amber!=null && value>=amber ? 'review' : 'fail'};
+  return {target, source, bands, grade:value=>value>=green ? 'pass' : amber!=null && value>=amber ? 'review' : 'fail'};
 }
-function atMost(limit, unit, notes) {
+function atMost(limit, unit, source, notes) {
   const target = '≤ '+number(limit)+unit;
   return {
     target,
+    source,
     bands:[band('pass',target,notes.pass),band('review','> '+number(limit)+unit,notes.review)],
     grade:value=>value<=limit ? 'pass' : 'review',
   };
 }
-const maintainability = atLeast(20,10,'',{
+const maintainability = atLeast(20,10,'',rangeSources.visualStudio,{
   pass:'Good on the Visual Studio scale.',
   review:'Moderate maintainability.',
   fail:'Low maintainability.',
 });
-const documentation = atLeast(80,50,'%',{
+const documentation = atLeast(80,50,'%',rangeSources.dashboard,{
   pass:'Meets the dashboard’s documentation reference.',
   review:'Coverage has room to improve.',
   fail:'Fewer than half of eligible items are documented.',
 });
 const documentationLines = band('measured','Lines after ·','BCA count across the measured source. No target applies.');
 documentation.bands.push(documentationLines);
-const densityChange = atMost(10,'%',{
+const densityChange = atMost(10,'%',rangeSources.dashboard,{
   pass:'Increase is within the advisory limit.',
   review:'Functions per file rose by more than 10%.',
 });
@@ -160,6 +171,7 @@ const densityReference = {
   ],
 };
 const unratedCoverage = {
+  source:'Coverage report · no declared CI target',
   bands:[band('measured','Measured coverage','This report has no declared CI target.')],
   grade:()=> 'measured',
 };
@@ -177,11 +189,11 @@ function analyzer(sample, language) {
   const statuses = {Clean:'pass',Passed:'pass',Failed:'fail',Partial:'review',Skipped:'missing',Cancelled:'missing'};
   return {value,status:statuses[value] ?? 'missing',rule:checks,detail};
 }
-function functionMetric(key, limit) {
+function functionMetric(key, limit, reference) {
   const rules = Object.fromEntries(languages.map(language=>[language,atMost(
-    typeof limit === 'number' ? limit : limit[language], '', {
-      pass:'Within the dashboard’s advisory limit.',
-      review:'Above the dashboard’s advisory limit.',
+    typeof limit === 'number' ? limit : limit[language], '', reference, {
+      pass:'P90 is within the reference.',
+      review:'P90 exceeds the reference.',
     },
   )]));
   return (_project,language,_sample,source)=>reading(source?.[key],rules[language]);
@@ -213,9 +225,10 @@ function testCoverage(project, language, sample) {
   const key = coverageByLanguage[language];
   const report = sample[key];
   const target = report?.target ?? (data.demo ? data.demoTargets?.coverage?.[key] : null);
-  const rule = Number.isFinite(target) ? atLeast(target,null,'%',{
-    pass:'Meets this project’s CI coverage target.',
-    fail:'Below this project’s CI coverage target.',
+  const source = data.demo ? 'Demo data · illustrative target' : rangeSources.ci;
+  const rule = Number.isFinite(target) ? atLeast(target,null,'%',source,{
+    pass:'Meets the coverage target.',
+    fail:'Below the coverage target.',
   }) : unratedCoverage;
   const scope = language === 'cpp' ? 'executable C++ lines covered'
     : project === 'crysta' ? 'public Python API entries exercised' : 'Python package statements covered';
@@ -241,13 +254,13 @@ const groups = {
   ],
   maintainability: [
     {name:'Maintainability index',hint:'0–100',help:'BCA’s median file score on the Visual Studio index (0–100). Higher is better. It combines code size, cyclomatic complexity and Halstead volume.',read:(_project,_language,_sample,source)=>reading(source?.mi,maintainability)},
-    {name:'Cyclomatic complexity',hint:'P90',help:'BCA’s 90th percentile of independent control-flow paths per function. Lower is better.',read:functionMetric('p90',{cpp:12,python:10})},
-    {name:'Cognitive complexity',hint:'P90',help:'BCA’s 90th percentile of how hard a function’s control flow is to follow, including nesting. Lower is better.',read:functionMetric('p90_cognitive',15)},
+    {name:'Cyclomatic complexity',hint:'P90',help:'BCA’s 90th percentile of independent control-flow paths per function. The NIST guideline for individual modules serves as the P90 reference.',read:functionMetric('p90',10,rangeSources.nist)},
+    {name:'Cognitive complexity',hint:'P90',help:'BCA’s 90th percentile of how hard a function’s control flow is to follow. SonarSource’s per-function defaults serve as the P90 references.',read:functionMetric('p90_cognitive',{cpp:25,python:15},rangeSources.sonar)},
   ],
   functions: [
-    {name:'Function length',hint:'P90 · lines',help:'BCA’s 90th percentile of physical code lines per function.',read:functionMetric('p90_length',50)},
-    {name:'Function arguments',hint:'P90',help:'BCA’s 90th percentile of arguments per callable.',read:functionMetric('p90_arguments',5)},
-    {name:'Function exits',hint:'P90',help:'BCA’s 90th percentile of explicit exits per function.',read:functionMetric('p90_exits',8)},
+    {name:'Function length',hint:'P90 · lines',help:'BCA’s 90th percentile of physical code lines per function.',read:functionMetric('p90_length',50,rangeSources.dashboard)},
+    {name:'Function arguments',hint:'P90',help:'BCA’s 90th percentile of arguments per callable. The per-function BCA default serves as the P90 reference.',read:functionMetric('p90_arguments',5,rangeSources.bca)},
+    {name:'Function exits',hint:'P90',help:'BCA’s 90th percentile of explicit exits per function. The per-function BCA default serves as the P90 reference.',read:functionMetric('p90_exits',5,rangeSources.bca)},
   ],
   size: [
     {name:'Physical code lines',hint:'Code only',help:'BCA physical code lines excluding blank and comment-only lines.',read:(_project,_language,_sample,source)=>reading(source?.components?.reduce((sum,item)=>sum+item.lines,0),measured)},
@@ -263,7 +276,7 @@ function infoId(content) {
 function resultCell(card, result, project, language) {
   const {value,status,counts,countsLabel,detail,rule} = result;
   const title = card.name+' · '+project+' '+labels[language];
-  const id = infoId({title,description:detail || card.help,references:[{bands:rule.bands}]});
+  const id = infoId({title,description:detail || card.help,references:[rule]});
   const label = title+' · '+value+(countsLabel ? ' · '+countsLabel : '')+(statusLabels[status] ? ' · '+statusLabels[status] : '');
   const mark = Object.hasOwn(statusSymbols,status)
     ? '<span class="mark" aria-hidden="true">'+statusSymbols[status]+'</span>' : '';
@@ -275,16 +288,16 @@ function headingReferences(rows) {
   const unique = new Map();
   for (const {project, results} of rows) {
     for (const [index, {rule}] of results.entries()) {
-      const key = JSON.stringify(rule.bands);
-      if (!unique.has(key)) unique.set(key,{bands:rule.bands, labels:[]});
-      unique.get(key).labels.push({project,language:labels[languages[index]]});
+      const key = JSON.stringify([rule.source,rule.bands]);
+      if (!unique.has(key)) unique.set(key,{rule, scopes:[]});
+      unique.get(key).scopes.push({project,language:labels[languages[index]]});
     }
   }
-  return [...unique.values()].map(({bands,labels:scopes})=>{
+  return [...unique.values()].map(({rule,scopes})=>{
     const matchesLanguage = scopes.every(scope=>scope.language===scopes[0].language);
     const name = matchesLanguage && scopes.length===projects.length ? scopes[0].language
       : scopes.map(scope=>scope.project+' '+scope.language).join(' · ');
-    return {bands,name:unique.size>1 ? name : ''};
+    return {...rule,name:unique.size>1 ? name : ''};
   });
 }
 function renderCard(group, card) {
@@ -340,7 +353,8 @@ function showTooltip(trigger) {
   hideTooltip();
   const {title,description,references} = tooltipContent[trigger.dataset.info];
   tooltip.innerHTML = '<strong>'+escapeHtml(title)+'</strong><p>'+escapeHtml(description)+'</p>'+
-    references.map(({name,bands})=>(name ? '<span class="range-label">'+escapeHtml(name)+'</span>' : '')+
+    references.map(({name,source,bands})=>'<span class="range-label">'+
+      escapeHtml(name ? name+' · '+source : source)+'</span>'+
       '<ul class="range-list">'+bands.map(({tone,range,note})=>'<li class="'+tone+'"><b>'+escapeHtml(range)+
         '</b><span>'+escapeHtml(note)+'</span></li>').join('')+'</ul>').join('');
   activeTrigger = trigger;
