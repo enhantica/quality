@@ -19,8 +19,18 @@ body {margin:0;background:var(--page);color:var(--text);font:var(--font-metric)/
 main {width:min(100%,1480px);margin:auto;padding:22px clamp(15px,3.5vw,42px) 24px}
 .page-header {display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 16px}
 .page-header h1 {margin:0;font-size:var(--font-title);font-weight:650;line-height:1.15;letter-spacing:-.035em}
-.snapshot-picker {min-width:0;width:224px;max-width:56%;padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--text);font:inherit;font-size:var(--font-meta)}
-.snapshot-picker:focus-visible {outline:2px solid var(--info);outline-offset:2px}
+.snapshot-picker {position:relative;min-width:0;width:168px;max-width:54%}
+.snapshot-trigger, .snapshot-option {display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;color:var(--text);font:inherit;font-size:var(--font-meta);text-align:left;cursor:pointer}
+.snapshot-trigger {padding:8px 11px;border:1px solid var(--line);border-radius:8px;background:var(--card);font-weight:600}
+.snapshot-trigger::after {content:'';width:6px;height:6px;margin:0 2px 3px 0;border:solid var(--muted);border-width:0 1.5px 1.5px 0;transform:rotate(45deg)}
+.snapshot-trigger[aria-expanded="true"]::after {margin-bottom:0;transform:rotate(225deg)}
+.snapshot-trigger:hover {border-color:var(--size)}
+.snapshot-trigger:focus-visible, .snapshot-option:focus-visible {outline:2px solid var(--info);outline-offset:1px}
+.snapshot-menu {position:absolute;z-index:3;top:calc(100% + 6px);right:0;width:100%;max-height:min(390px,65vh);overflow:auto;padding:5px;border:1px solid var(--line);border-radius:8px;background:var(--card);box-shadow:0 8px 26px #20293620}
+.snapshot-option {padding:7px 8px;border:0;border-radius:4px;background:none}
+.snapshot-option:hover, .snapshot-option:focus-visible {background:var(--page)}
+.snapshot-option[aria-selected="true"] {color:var(--info);background:#edf3fa;font-weight:600}
+.snapshot-option[aria-selected="true"]::after {content:'✓'}
 a {color:var(--info);text-underline-offset:2px}
 a:hover {color:var(--text)}
 a:focus-visible {outline:2px solid var(--info);outline-offset:2px}
@@ -82,9 +92,11 @@ a:focus-visible {outline:2px solid var(--info);outline-offset:2px}
 <main>
   <header class="page-header">
     <h1>Code quality</h1>
-    <select class="snapshot-picker" id="snapshot-picker" aria-label="Main branch or release">
-      <option value="main">Current main</option>
-    </select>
+    <div class="snapshot-picker" id="snapshot-picker">
+      <button class="snapshot-trigger" type="button" id="snapshot-trigger" aria-haspopup="listbox"
+        aria-controls="snapshot-menu" aria-expanded="false">main</button>
+      <div class="snapshot-menu" id="snapshot-menu" role="listbox" aria-label="edi version" hidden></div>
+    </div>
   </header>
   <section class="grid" aria-label="Metric cards for crysta and edi" id="cards"></section>
   <footer class="footer">
@@ -111,22 +123,20 @@ const metricsByLanguage = {cpp:'static',python:'python_static'};
 const analysisByLanguage = {cpp:'Clang static analysis',python:'Ruff'};
 const coverageByLanguage = {cpp:'coverage',python:'python'};
 const docsByLanguage = {cpp:'docs',python:'python_docs'};
-const snapshots = document.querySelector('#snapshot-picker');
-const releases = new Map();
-let selectedRelease;
-for (const project of projects) {
-  const published = data.projects[project].releases ?? [];
-  if (!published.length) continue;
-  const group = document.createElement('optgroup');
-  group.label = project === 'crysta' ? 'crysta SDK and releases' : 'edi releases';
-  for (const release of published.slice().reverse()) {
-    const key = project+':'+release.id;
-    const label = project === 'crysta' && /^build-[0-9a-f]{40}$/.test(release.tag)
-      ? 'crysta SDK '+release.tag.slice(6,13) : project+' '+release.tag;
-    group.append(new Option(label,key));
-    releases.set(key,{project,...release});
-  }
-  snapshots.append(group);
+const picker = document.querySelector('#snapshot-picker');
+const snapshotTrigger = document.querySelector('#snapshot-trigger');
+const snapshotMenu = document.querySelector('#snapshot-menu');
+const releases = data.projects.edi.releases ?? [];
+const newestFirst = releases.slice().reverse();
+const choices = [null,...newestFirst];
+let selectedRelease = newestFirst[0] ?? null;
+
+function snapshotFor(project, ediSnapshot) {
+  if (project === 'edi') return ediSnapshot ?? {};
+  const pin = ediSnapshot?.crysta_pin;
+  const sample = data.projects.crysta.pins?.[pin];
+  if (pin && sample?.sha === pin) return sample;
+  return data.demo ? data.projects.crysta.samples.at(-1) ?? {} : {};
 }
 const statusSymbols = {pass:'✓',review:'!',fail:'×'};
 const statusLabels = {pass:'Within reference',review:'Review',fail:'Needs attention',missing:'No report'};
@@ -239,11 +249,10 @@ function averageFunctions(report) {
 function density(project, language, report) {
   const ratio = averageFunctions(report);
   if (ratio == null) return reading(null,densityReference);
-  const record = data.projects[project];
   const previous = selectedRelease
-    ? record.releases.filter(release=>release.published_at<selectedRelease.published_at).map(release=>release.sample)
-    : record.samples.slice(0,-1);
-  const prior = previous.slice().reverse()
+    ? releases.filter(release=>release.published_at<selectedRelease.published_at).map(release=>release.sample)
+    : data.projects.edi.samples.slice(0,-1);
+  const prior = previous.slice().reverse().map(snapshot=>snapshotFor(project,snapshot))
     .map(sample=>averageFunctions(sample[metricsByLanguage[language]])).find(value=>value!=null);
   const change = prior > 0 ? Math.round((ratio/prior-1)*1e8)/1e6 : null;
   const detail = change == null ? 'No prior positive ratio for this project and language.'
@@ -348,18 +357,20 @@ function headingReferences(rows) {
   });
 }
 function renderCard(group, card) {
-  const visibleProjects = selectedRelease ? [selectedRelease.project] : projects;
-  const rows = visibleProjects.map(project=>{
-    const snapshot = (selectedRelease ? selectedRelease.sample : data.projects[project].samples.at(-1)) ?? {};
+  const ediSnapshot = selectedRelease ? selectedRelease.sample : data.projects.edi.samples.at(-1);
+  const rows = projects.map(project=>{
+    const snapshot = snapshotFor(project,ediSnapshot);
     const results = languages.map(language=>card.read(project,language,snapshot,snapshot[metricsByLanguage[language]]));
-    return {project,results};
+    const pin = project === 'crysta' && ediSnapshot?.crysta_pin;
+    const rowTitle = pin ? ' title="'+escapeHtml('crysta SDK pinned by edi: '+pin)+'"' : '';
+    return {project,results,rowTitle};
   });
   const heads = languages.map((language,index)=>{
     const targets = [...new Set(rows.map(({results})=>results[index].rule.target).filter(Boolean))];
     const suffix = targets.length===1 ? ' '+(card.targetPrefix ?? '')+targets[0] : targets.length>1 ? ' · per project' : '';
     return '<span>'+escapeHtml(card.columns?.[language] ?? labels[language]+suffix)+'</span>';
   }).join('');
-  const readings = rows.map(({project,results})=>'<div class="reading"><span>'+project+'</span><div class="values">'+
+  const readings = rows.map(({project,results,rowTitle})=>'<div class="reading"><span'+rowTitle+'>'+project+'</span><div class="values">'+
     results.map((result,index)=>resultCell(card,result,project,languages[index])).join('')+'</div></div>').join('');
   const id = infoId({title:card.name,description:card.help,references:headingReferences(rows)});
   return '<article class="card" data-group="'+group+'"><h2><button type="button" class="info-trigger card-info" data-info="'+id+'" aria-controls="metric-tooltip" aria-expanded="false">'+
@@ -467,18 +478,79 @@ window.addEventListener('scroll',positionTooltip,{passive:true});
 function renderSnapshot() {
   hideTooltip();
   document.querySelector('main').after(tooltip);
-  selectedRelease = releases.get(snapshots.value);
   tooltipContent.length = 0;
   const cards = document.querySelector('#cards');
-  const label = selectedRelease ? selectedRelease.project+' '+selectedRelease.tag : 'crysta and edi main';
-  cards.setAttribute('aria-label','Metric cards for '+label);
+  const version = selectedRelease?.tag ?? 'main';
+  snapshotTrigger.textContent = version;
+  snapshotTrigger.setAttribute('aria-label','edi version: '+version);
+  cards.setAttribute('aria-label','Metric cards for edi '+version+' and its pinned crysta SDK');
   cards.innerHTML = Object.entries(groups)
     .flatMap(([group,metrics])=>metrics.map(card=>renderCard(group,card))).join('');
   document.querySelector('#trends-link').textContent = selectedRelease ? 'Main-branch trends ↗' : 'Trends and components ↗';
   bindTooltipTriggers();
 }
+const options = choices.map(release=>{
+  const option = document.createElement('button');
+  option.type = 'button';
+  option.className = 'snapshot-option';
+  option.setAttribute('role','option');
+  option.setAttribute('aria-selected',String(release===selectedRelease));
+  option.tabIndex = -1;
+  option.textContent = release?.tag ?? 'main';
+  option.addEventListener('click',()=>{
+    selectedRelease = release;
+    for (const [index,item] of options.entries()) item.setAttribute('aria-selected',String(choices[index]===release));
+    closeMenu();
+    snapshotTrigger.focus();
+    renderSnapshot();
+  });
+  snapshotMenu.append(option);
+  return option;
+});
+
+function closeMenu() {
+  snapshotMenu.hidden = true;
+  snapshotTrigger.setAttribute('aria-expanded','false');
+}
+function openMenu() {
+  snapshotMenu.hidden = false;
+  snapshotTrigger.setAttribute('aria-expanded','true');
+  options[choices.indexOf(selectedRelease)].focus();
+}
+snapshotTrigger.addEventListener('click',()=>{
+  if (snapshotMenu.hidden) openMenu();
+  else closeMenu();
+});
+picker.addEventListener('keydown',event=>{
+  if (!snapshotMenu.hidden && options.includes(document.activeElement) && ['Enter',' '].includes(event.key)) {
+    event.preventDefault();
+    document.activeElement.click();
+    return;
+  }
+  if (event.key==='Escape' && !snapshotMenu.hidden) {
+    closeMenu();
+    snapshotTrigger.focus();
+    event.preventDefault();
+    return;
+  }
+  if (!['ArrowDown','ArrowUp','Home','End'].includes(event.key)) return;
+  event.preventDefault();
+  if (snapshotMenu.hidden) {
+    openMenu();
+    return;
+  }
+  const current = options.indexOf(document.activeElement);
+  const next = event.key==='Home' ? 0 : event.key==='End' ? options.length-1
+    : Math.max(0,Math.min(options.length-1,current+(event.key==='ArrowDown' ? 1 : -1)));
+  options[next].focus();
+});
+picker.addEventListener('focusout',event=>{
+  if (!picker.contains(event.relatedTarget)) closeMenu();
+});
+document.addEventListener('pointerdown',event=>{
+  if (!picker.contains(event.target)) closeMenu();
+});
 document.querySelector('#demo-label').hidden = !data.demo;
-snapshots.addEventListener('change',renderSnapshot);
 renderSnapshot();
 </script>
 </body>

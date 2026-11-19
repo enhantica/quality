@@ -78,21 +78,6 @@ jobs:
           else
             echo "refresh=true" >> "$GITHUB_OUTPUT"
           fi
-      - name: Check out crysta main
-        if: env.COLLECT_METRICS == 'true' && steps.plan.outputs.refresh == 'true'
-        uses: actions/checkout@v5
-        with:
-          repository: enhantica/crysta
-          ref: main
-          path: inputs/crysta
-          token: ${{ steps.source-token.outputs.token }}
-          persist-credentials: false
-          sparse-checkout: |
-            include/crysta
-            src/core
-            src/cli
-            src/bindings
-            lib/crysta
       - name: Check out edi main
         if: env.COLLECT_METRICS == 'true' && steps.plan.outputs.refresh == 'true'
         uses: actions/checkout@v5
@@ -146,12 +131,12 @@ jobs:
               gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name edi-measurements --dir history
             fi
           fi
-      - name: Collect public aggregates for main branches and release tags
+      - name: Collect aggregates for edi and its pinned crysta commits
         if: env.COLLECT_METRICS == 'true' && steps.plan.outputs.refresh == 'true'
         env:
           GH_TOKEN: ${{ steps.source-token.outputs.token }}
         run: >-
-          python3 scripts/collect.py --crysta inputs/crysta --edi inputs/edi --docs --github
+          python3 scripts/collect.py --edi inputs/edi --docs --github
           --history history/snapshots.json --edi-measurements history/edi.json
           --release-catalogue "$RUNNER_TEMP/releases.json" --output history/snapshots.json
       - name: Render dashboard

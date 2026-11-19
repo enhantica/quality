@@ -7,7 +7,6 @@ from pathlib import Path
 import re
 import subprocess
 
-PROJECTS = ("crysta", "edi")
 QUERY = """
 query($name: String!, $endCursor: String) {
   repository(owner: "enhantica", name: $name) {
@@ -61,7 +60,7 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     prior = json.loads(args.history.read_text())
-    catalogue = {repo: published_releases(repo) for repo in PROJECTS}
+    catalogue = {"edi": published_releases("edi")}
     args.output.write_text(json.dumps(catalogue) + "\n", encoding="utf-8")
     changed = release_changed(catalogue, prior)
     if output := os.environ.get("GITHUB_OUTPUT"):

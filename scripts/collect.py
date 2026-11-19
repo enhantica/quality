@@ -4,7 +4,6 @@ import argparse
 import ast
 import base64
 from collections import Counter
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 import json
 import math
@@ -14,6 +13,7 @@ import re
 import statistics
 import subprocess
 from tempfile import TemporaryDirectory
+import tomllib
 import xml.etree.ElementTree as ET
 from zoneinfo import ZoneInfo
 
@@ -233,8 +233,6 @@ def parse_coverage(repo, directory):
 
 
 def coverage_targets(repo, manifest, reports):
-    import tomllib
-
     config = tomllib.loads(manifest)["tool"]
     thresholds = config.get(repo, {}).get("coverage", {})
     sources = {
@@ -293,15 +291,23 @@ def coverage_results(repo, sha):
     return receipt
 
 
-def merge_edi_measurements(sample, receipt, root):
+def edi_crysta_pin(sha, root):
+    manifest = subprocess.run(
+        ["git", "show", f"{sha}:pixi.toml"], cwd=root, text=True,
+        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+    )
+    if manifest.returncode:
+        return None
+    pin = tomllib.loads(manifest.stdout).get("activation", {}).get("env", {}).get("CRYSTA_COMMIT")
+    return pin if isinstance(pin, str) and re.fullmatch(r"[0-9a-f]{40}", pin) else None
+
+
+def merge_edi_measurements(sample, receipt):
     if not receipt or receipt["repo"] != "edi" or receipt["sha"] != sample["sha"]:
         return
 
-    import tomllib
-
-    manifest = capture("git", "show", f"{sample['sha']}:pixi.toml", cwd=root)
-    expected_sdk = tomllib.loads(manifest)["activation"]["env"]["CRYSTA_COMMIT"]
-    if receipt["sdk_sha"] != expected_sdk or type(receipt["run_id"]) is not int or receipt["run_id"] < 1:
+    pin = sample.get("crysta_pin")
+    if not pin or receipt["sdk_sha"] != pin or type(receipt["run_id"]) is not int or receipt["run_id"] < 1:
         raise ValueError("The coverage receipt does not match edi's declared SDK or workflow run")
 
     reports = {}
@@ -359,6 +365,8 @@ def collect(repo, root, bca, docs, from_github, historical=False):
         sample["coverage_settings"] = coverage_targets(
             repo, manifest, {key: sample[key] for key in ("coverage", "python") if key in sample},
         )
+    if repo == "edi":
+        sample["crysta_pin"] = edi_crysta_pin(sha, root)
     return sample
 
 
@@ -380,57 +388,71 @@ def exact_evidence(sample, previous):
                 sample[key] = previous[key]
 
 
-def collect_releases(repo, catalogue, archived, known, bca, docs, from_github):
+def fetch_commits(repo, commits, root, local_source=None):
+    if any(not re.fullmatch(r"[0-9a-f]{40}", sha) for sha in commits):
+        raise ValueError(f"Invalid {repo} commit in the dashboard plan")
+    subprocess.run(["git", "init", "--quiet"], cwd=root, check=True)
+    subprocess.run(["git", "sparse-checkout", "set", "--cone", *SCOPES[repo]], cwd=root, check=True)
+    env = dict(os.environ, GIT_TERMINAL_PROMPT="0")
+    args = ["git"]
+    if token := env.get("GH_TOKEN"):
+        encoded = base64.b64encode(f"x-access-token:{token}".encode()).decode()
+        env["QUALITY_RELEASE_AUTH"] = f"AUTHORIZATION: basic {encoded}"
+        args.append("--config-env=http.extraHeader=QUALITY_RELEASE_AUTH")
+    source = str(local_source) if local_source else f"https://github.com/enhantica/{repo}.git"
+    result = subprocess.run(
+        [*args, "fetch", "--quiet", "--depth=1", "--no-tags", source, *sorted(commits)],
+        cwd=root, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
+    if result.returncode:
+        raise RuntimeError(f"Could not fetch exact {repo} commits")
+
+
+def collect_historical(repo, sha, root, bca, docs, from_github):
+    result = subprocess.run(
+        ["git", "checkout", "--quiet", "--detach", sha], cwd=root,
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
+    if result.returncode or capture("git", "rev-parse", "HEAD", cwd=root).strip() != sha:
+        raise RuntimeError(f"Could not verify the {repo} checkout")
+    try:
+        return collect(repo, root, bca, docs, from_github, historical=True)
+    except (ValueError, RuntimeError) as error:
+        print(f"{repo} analysis unavailable at {sha[:12]} ({type(error).__name__})")
+        return {"sha": sha, "unavailable": True}
+
+
+def collect_releases(catalogue, archived, known, bca, docs, from_github):
     releases = {release["id"]: release for release in archived}
-    missing = {row["sha"] for row in catalogue if row["sha"] not in known}
+    catalogue = {row["id"]: row for row in [*archived, *catalogue]}
+    commits = set(known) | {row["sha"] for row in catalogue.values()}
+    missing = {sha for sha in commits if "crysta_pin" not in known.get(sha, {})}
     if missing:
         with TemporaryDirectory() as temporary:
             root = Path(temporary)
-            subprocess.run(["git", "init", "--quiet"], cwd=root, check=True)
-            subprocess.run(["git", "sparse-checkout", "set", "--cone", *SCOPES[repo]], cwd=root, check=True)
-            env = dict(os.environ, GIT_TERMINAL_PROMPT="0")
-            if token := env.get("GH_TOKEN"):
-                encoded = base64.b64encode(f"x-access-token:{token}".encode()).decode()
-                env["QUALITY_RELEASE_AUTH"] = f"AUTHORIZATION: basic {encoded}"
-            args = ["git"]
-            if token:
-                args.append("--config-env=http.extraHeader=QUALITY_RELEASE_AUTH")
-            # Fetch only commits resolved by the authenticated release catalogue.
-            result = subprocess.run(
-                [*args, "fetch", "--quiet", "--depth=1", "--no-tags",
-                 f"https://github.com/enhantica/{repo}.git", *sorted(missing)],
-                cwd=root, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            )
-            if result.returncode:
-                raise RuntimeError(f"Could not fetch exact {repo} release commits")
+            fetch_commits("edi", missing, root)
             for sha in sorted(missing):
-                result = subprocess.run(
-                    ["git", "checkout", "--quiet", "--detach", sha], cwd=root,
-                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                )
-                if result.returncode or capture("git", "rev-parse", "HEAD", cwd=root).strip() != sha:
-                    raise RuntimeError(f"Could not verify the {repo} release checkout")
-                try:
-                    known[sha] = collect(repo, root, bca, docs, from_github, historical=True)
-                except (ValueError, RuntimeError) as error:
-                    # Historic source layouts can lack a usable analysis scope.
-                    print(f"{repo} release analysis unavailable at {sha[:12]} ({type(error).__name__})")
-                    known[sha] = {"sha": sha, "unavailable": True}
-    for release in catalogue:
+                previous = known.get(sha)
+                if not previous or previous.get("unavailable"):
+                    previous = collect_historical("edi", sha, root, bca, docs, from_github)
+                known[sha] = previous if "crysta_pin" in previous else {
+                    **previous, "crysta_pin": edi_crysta_pin(sha, root),
+                }
+    for release in catalogue.values():
         sample = known[release["sha"]]
         previous = releases.get(release["id"], {})
         if previous.get("sha") == release["sha"] and not previous["sample"].get("unavailable"):
             # Keep the original source measurements and fill in later same-commit CI evidence.
             sample = previous["sample"].copy()
             exact_evidence(sample, known[release["sha"]])
+            sample["crysta_pin"] = known[release["sha"]]["crysta_pin"]
         releases[release["id"]] = {**release, "sample": sample}
     return sorted(releases.values(), key=lambda row: (row["published_at"], row["id"]))
 
 
-def collect_project(repo, root, previous, catalogue, edi_measurements, bca, docs, from_github):
-    sample = collect(repo, root, bca, docs, from_github)
-    if repo == "edi":
-        merge_edi_measurements(sample, edi_measurements, root)
+def collect_edi(root, previous, catalogue, edi_measurements, bca, docs, from_github):
+    sample = collect("edi", root, bca, docs, from_github)
+    merge_edi_measurements(sample, edi_measurements)
     history = previous.get("samples", [])
     archived = previous.get("releases", [])
     known = {row["sha"]: row["sample"] for row in archived}
@@ -443,16 +465,53 @@ def collect_project(repo, root, previous, catalogue, edi_measurements, bca, docs
         row for row in history
         if row["sha"] != sample["sha"] or datetime.fromisoformat(row["date"]).astimezone(zone).date() != day
     ]
+    releases = collect_releases(catalogue, archived, known, bca, docs, from_github)
     return {
         "branch": "main",
-        "samples": (history + [sample])[-90:],
-        "releases": collect_releases(repo, catalogue, archived, known, bca, docs, from_github),
+        "samples": [{**row, "crysta_pin": known[row["sha"]]["crysta_pin"]} for row in (history + [sample])[-90:]],
+        "releases": releases,
+    }
+
+
+def collect_crysta_pins(edi, previous, local_source, bca, docs, from_github):
+    releases = [row["sample"] for row in edi["releases"]]
+    pins = {row["crysta_pin"] for row in [*edi["samples"], *releases] if row.get("crysta_pin")}
+    known = {row["sha"]: row["sample"] for row in previous.get("releases", [])}
+    known.update({row["sha"]: row for row in previous.get("samples", []) if row.get("sha")})
+    known.update(previous.get("pins", {}))
+    missing = {sha for sha in pins if sha not in known or known[sha].get("unavailable")}
+    if missing:
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            fetch_commits("crysta", missing, root, local_source)
+            for sha in sorted(missing):
+                known[sha] = collect_historical("crysta", sha, root, bca, docs, from_github)
+    latest_pin = edi["samples"][-1].get("crysta_pin")
+    if from_github and latest_pin in known and latest_pin not in missing:
+        previous_sample = known[latest_pin]
+        checks, url = test_results("crysta", latest_pin)
+        update = coverage_results("crysta", latest_pin)
+        for key in ("coverage", "python"):
+            setting = previous_sample.get("coverage_settings", {}).get(key)
+            if key in update and setting:
+                update[key]["target"] = setting["target"]
+        if checks:
+            update.update(checks=checks, ci_url=url)
+        exact_evidence(update, previous_sample)
+        known[latest_pin] = previous_sample | update
+    return {
+        "branch": "edi SDK",
+        "samples": [
+            {**known.get(row.get("crysta_pin"), {}), "date": row["date"]}
+            for row in edi["samples"]
+        ],
+        "pins": {sha: known[sha] for sha in sorted(pins)},
     }
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--crysta", type=Path, required=True)
+    parser.add_argument("--crysta", type=Path, help="Read pinned commits from this local crysta repository")
     parser.add_argument("--edi", type=Path, required=True)
     parser.add_argument("--bca", default="bca")
     parser.add_argument("--docs", action="store_true")
@@ -467,17 +526,15 @@ def main():
                         if args.edi_measurements and args.edi_measurements.exists() else None)
     catalogue = json.loads(args.release_catalogue.read_text()) if args.release_catalogue else {}
     previous = prev.get("projects", {}) if prev.get("schema") == 1 else {}
-    data = {"schema": 1, "demo": False, "projects": {}}
-    with ThreadPoolExecutor() as pool:
-        jobs = {
-            repo: pool.submit(
-                collect_project, repo, getattr(args, repo).resolve(), previous.get(repo, {}),
-                catalogue.get(repo, []), edi_measurements, args.bca, args.docs, args.github,
-            )
-            for repo in SCOPES
-        }
-        for repo, job in jobs.items():
-            data["projects"][repo] = job.result()
+    edi = collect_edi(
+        args.edi.resolve(), previous.get("edi", {}), catalogue.get("edi", []),
+        edi_measurements, args.bca, args.docs, args.github,
+    )
+    crysta = collect_crysta_pins(
+        edi, previous.get("crysta", {}), args.crysta.resolve() if args.crysta else None,
+        args.bca, args.docs, args.github,
+    )
+    data = {"schema": 1, "demo": False, "projects": {"crysta": crysta, "edi": edi}}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(data, indent=2, allow_nan=False)+"\n", encoding="utf-8")
 

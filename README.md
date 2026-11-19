@@ -1,6 +1,6 @@
 # Enhantica code quality
 
-A code quality dashboard for crysta and edi. Choose **Current main** to compare both projects or a published release to see that project's tagged commit. The picker includes crysta SDK prereleases. Every card shows C++ and Python side by side.
+A code quality dashboard for edi and the crysta SDK it uses. The picker lists **main** first, then published edi releases newest first, and opens at the latest release. Every card shows edi and the crysta commit pinned by that edi version, with C++ and Python side by side.
 
 ## Preview
 
@@ -13,19 +13,19 @@ python3 scripts/render.py --trends --output dist/trends.html
 
 ## Collection and publishing
 
-The dashboard refreshes daily at 08:25 Stockholm time, on pushes to this repo’s main branch, and on dispatch. At 25 minutes past each other hour it checks both product repositories for new published releases and refreshes when it finds one. The edi measurement workflow runs daily at 07:15 and also triggers a dashboard refresh after a successful run. Enable GitHub Actions as the Pages source. Until live publication is enabled, deploys contain only the demo.
+The dashboard refreshes daily at 08:25 Stockholm time, on pushes to this repo’s main branch, and on dispatch. At 25 minutes past each other hour it checks for new published edi releases and refreshes when it finds one. The edi measurement workflow runs daily at 07:15 and also triggers a dashboard refresh after a successful run. Enable GitHub Actions as the Pages source. Until live publication is enabled, deploys contain only the demo.
 
 The collector requests read access to Actions and Contents for both product repositories. It uses the existing Enhantica app configuration by default. The repository variable `QUALITY_APP_ID` and secret `QUALITY_APP_KEY` can point it to a different app.
 
 Run the workflow manually with `collect_only=true` to download the `quality-dashboard-report` Actions artifact. Open `index.html` from the extracted archive. The same run saves its machine-readable metrics as `quality-snapshots`. Set `QUALITY_PUBLISH_LIVE` to `true` to publish live aggregates once the Pages audience is confirmed. The current Pages site is public.
 
-The workflow checks out each project's own main commit. BCA reads the declared production C++ and Python source roots. Metrics include physical code lines, logical lines, file and function counts, median file Visual Studio MI for files with measured Halstead volume, documentation lines, and nearest-rank 90th percentiles across functions for cyclomatic complexity, cognitive complexity, physical code lines, arguments, and exits. Reports contain aggregates and public edi function links. The crysta report omits function names and source paths. The analyzers suppress diagnostics that could quote source in Actions logs.
+The workflow checks out edi main and reads each selected edi commit's `CRYSTA_COMMIT` in `pixi.toml`. It measures or reuses the exact pinned crysta commit. BCA reads the declared production C++ and Python source roots. Metrics include physical code lines, logical lines, file and function counts, median file Visual Studio MI for files with measured Halstead volume, documentation lines, and nearest-rank 90th percentiles across functions for cyclomatic complexity, cognitive complexity, physical code lines, arguments, and exits. Reports contain aggregates and public edi function links. The crysta report omits function names and source paths. The analyzers suppress diagnostics that could quote source in Actions logs.
 
 Doxygen counts the documented declarations it extracts from public headers, excluding private members and the `detail` namespace. Python docstring coverage counts handwritten modules, public classes, and their public functions and methods. The API documentation card shows those percentages alongside BCA's count of documentation lines across the measured source. The test coverage card includes crysta's compiled Python binding coverage, measured over public API entries.
 
 Clang, sanitizer and docs results come from completed push runs for the measured commit. Unit test coverage uses an exact-commit coverage artifact or normalized edi receipt. The dashboard also accepts a verified artifact when both coverage steps and its upload passed before a later workflow step failed. For historical releases without a matching report, CI metrics show **No report**.
 
-The [metrics-history branch](https://github.com/enhantica/quality/tree/metrics-history) keeps only normalized aggregates. Each publication adds a Git revision. The dashboard carries the latest 90 main snapshots and every collected release. Release source measurements use the exact tag commit and the same available production scopes as main. Captured CI evidence stays with its commit after the original artifact expires.
+The [metrics-history branch](https://github.com/enhantica/quality/tree/metrics-history) keeps only normalized aggregates. Each publication adds a Git revision. The dashboard carries the latest 90 edi main snapshots and every collected edi release, whose crysta snapshots are indexed by SDK commit. Captured CI evidence stays with its commit after the original artifact expires.
 
 To sample local committed sources, install BCA 2.6.0 and optionally Doxygen, then run:
 

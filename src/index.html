@@ -22,7 +22,7 @@ main{width:100%;max-width:1550px;margin:0 auto;padding:29px 36px 28px}.topline{d
   <div class="brand"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span><span class="brand-name">Enhantica</span></div>
   <p class="rail-caption">Projects</p>
   <nav class="nav" id="projects" aria-label="Project"></nav>
-  <div class="rail-foot"><strong>Code quality dashboard</strong>Default-branch metrics</div>
+  <div class="rail-foot"><strong>Code quality dashboard</strong>edi main and its pinned SDK</div>
 </aside>
 <main>
   <div class="topline"><span id="breadcrumb"></span><span class="demo" id="mode"></span></div>
@@ -90,7 +90,8 @@ function render() {
   const latest = snapshots.at(-1) ?? {};
   const metricsBranch = record.branch ?? 'main';
   byId('projects').innerHTML = Object.keys(data.projects).map(name =>
-    '<button type="button" data-project="'+name+'" aria-pressed="'+(name===project)+'"><span class="dot"></span>'+meta[name].title+'<span class="branch">main</span></button>'
+    '<button type="button" data-project="'+name+'" aria-pressed="'+(name===project)+'"><span class="dot"></span>'+meta[name].title+
+    '<span class="branch">'+(data.projects[name].branch==='edi SDK'?'SDK':'main')+'</span></button>'
   ).join('');
   byId('breadcrumb').textContent = 'ENGINEERING / '+project.toUpperCase()+' / '+metricsBranch;
   byId('mode').textContent = data.demo ? 'Demo data' : 'CI measurements';
@@ -138,7 +139,8 @@ function draw() {
   const series = (limit ? snapshots.slice(-limit) : snapshots).map(p=>({value:entry.read(p),date:p.date}));
   const measured = series.filter(point=>point.value!=null);
   byId('trend-title').textContent = entry.label+' over time';
-  byId('trend-description').textContent = data.demo ? 'Illustrative main-branch snapshots' : 'Recorded main-branch snapshots';
+  byId('trend-description').textContent = data.demo ? 'Illustrative main-branch snapshots'
+    : data.projects[project].branch==='edi SDK' ? 'crysta SDK commits pinned by edi main' : 'Recorded main-branch snapshots';
   byId('chart-legend').textContent = measured.length ? entry.label : 'No measurements for this metric yet';
   const canvas = byId('chart'), ctx = canvas.getContext('2d');
   const width = canvas.clientWidth, height = canvas.clientHeight, dpr = window.devicePixelRatio || 1;
