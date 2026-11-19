@@ -26,22 +26,27 @@ a:focus-visible {outline:2px solid var(--info);outline-offset:2px}
 .card[data-group="maintainability"] {--accent:var(--maintainability)}
 .card[data-group="functions"] {--accent:var(--functions)}
 .card[data-group="size"] {--accent:var(--size)}
-.card h2 {display:flex;align-items:center;gap:9px;margin:0;padding:12px 14px;border-bottom:1px solid var(--line);font-size:var(--font-metric);font-weight:600;letter-spacing:-.02em;line-height:1.25;min-height:46px}
+.card h2 {margin:0;border-bottom:1px solid var(--line);font-size:var(--font-metric);font-weight:600;letter-spacing:-.02em;line-height:1.25}
+.info-trigger {border:0;background:none;color:inherit;font:inherit;cursor:help;padding:0}
+.info-trigger:focus-visible {outline:2px solid var(--info);outline-offset:2px;border-radius:3px}
+.card-info {display:flex;align-items:center;gap:9px;width:100%;padding:12px 14px;min-height:46px;text-align:left;letter-spacing:inherit}
 .hint {margin-left:auto;font-size:var(--font-meta);color:var(--muted);letter-spacing:0;white-space:nowrap}
+.help-mark {display:grid;place-items:center;width:13px;height:13px;border:1px solid currentColor;border-radius:50%;flex:none;font-size:var(--font-meta);line-height:1;color:var(--muted)}
 .icon {position:relative;display:block;width:22px;height:22px;flex:none;color:var(--muted)}
 .icon::before, .icon::after {content:"";position:absolute}
-.icon-quality::before {inset:1px;border:2px solid currentColor;border-radius:50%}
-.icon-quality::after {width:2px;height:8px;top:4px;left:10px;border-radius:2px;background:currentColor;transform:rotate(35deg);transform-origin:center bottom}
+.icon-verification::before, .icon-maintainability::before {inset:1px;border:2px solid currentColor;border-radius:50%}
+.icon-verification::after {width:8px;height:4px;top:7px;left:6px;border:solid currentColor;border-width:0 0 2px 2px;transform:rotate(-45deg)}
+.icon-maintainability::after {width:2px;height:8px;top:4px;left:10px;border-radius:2px;background:currentColor;transform:rotate(35deg);transform-origin:center bottom}
+.icon-functions::before {content:"{}";inset:0;display:grid;place-items:center;font:600 var(--font-metric)/1 ui-monospace,monospace;white-space:nowrap}
 .icon-size::before {inset:1px 3px;border:2px solid currentColor;border-radius:3px}
 .icon-size::after {top:6px;left:7px;width:8px;height:2px;border-radius:1px;background:currentColor;box-shadow:0 4px currentColor,0 8px currentColor}
-.icon-coverage::before {inset:2px 1px 1px;border:2px solid currentColor;border-radius:3px}
-.icon-coverage::after {inset:5px 5px 5px;background:linear-gradient(currentColor,currentColor) left bottom/2px 5px no-repeat,linear-gradient(currentColor,currentColor) center bottom/2px 10px no-repeat,linear-gradient(currentColor,currentColor) right bottom/2px 7px no-repeat}
 .readings {padding:9px 14px 11px;display:grid;gap:4px}
 .reading, .language-head {display:grid;grid-template-columns:48px minmax(0,1fr);align-items:center;gap:7px}
 .reading {min-height:28px}
 .values, .language-head > div {display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px}
 .result, .language-head span {min-width:0;text-align:right;line-height:1.2}
-.result {display:flex;align-items:baseline;justify-content:flex-end;gap:3px}
+.result {display:flex;align-items:baseline;justify-content:flex-end;gap:3px;line-height:1.2}
+.result:hover .value {text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}
 .language-head span {font-size:var(--font-meta);font-weight:550;color:var(--muted)}
 .pass {--tone:var(--pass)}
 .review {--tone:var(--review)}
@@ -49,15 +54,23 @@ a:focus-visible {outline:2px solid var(--info);outline-offset:2px}
 .missing {--tone:var(--missing)}
 .measured {--tone:var(--info)}
 .value {font-size:var(--font-metric);color:var(--tone,var(--text));font-variant-numeric:tabular-nums;white-space:nowrap}
-.mark {width:12px;flex:none;text-align:center;font-size:var(--font-meta);color:var(--tone,var(--muted))}
-.counts {min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:var(--font-meta);color:var(--muted);white-space:nowrap}
-.counts::before {content:'·';margin-right:4px}
+.mark {min-width:8px;flex:none;text-align:center;font-size:var(--font-meta);color:var(--tone,var(--muted))}
+.counts {min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:var(--font-meta);color:var(--info);font-variant-numeric:tabular-nums;white-space:nowrap}
+.counts::before {content:'·';margin-right:4px;color:var(--muted)}
 .footer {display:flex;justify-content:space-between;align-items:baseline;gap:8px 16px;flex-wrap:wrap;padding-top:15px;color:var(--muted);font-size:var(--font-meta)}
 .legend {display:flex;gap:13px;flex-wrap:wrap;list-style:none;margin:0;padding:0}
 .legend b {color:var(--tone);margin-right:4px;font-weight:600}
 .sr {position:absolute;overflow:hidden;width:1px;height:1px;clip-path:inset(50%);white-space:nowrap}
-@media(max-width:990px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.card h2,.readings{padding-inline:13px}}
-@media(max-width:640px){.grid{grid-template-columns:1fr;gap:12px}main{padding:15px 10px 24px}.readings{padding-inline:11px}}
+.metric-tooltip {position:fixed;z-index:2;width:min(340px,calc(100% - 24px));max-height:calc(100% - 24px);overflow:auto;padding:13px 14px;border:1px solid var(--line);border-radius:8px;background:var(--card);box-shadow:0 8px 26px #20293629;color:var(--muted);font-size:var(--font-meta);line-height:1.45}
+.metric-tooltip strong {display:block;color:var(--text);font-size:var(--font-metric)}
+.metric-tooltip p {margin:4px 0 8px}
+.range-label {display:block;margin-top:9px;color:var(--text);font-weight:600}
+.range-list {margin:4px 0 0;padding:0;list-style:none}
+.range-list li {display:grid;grid-template-columns:7px max-content 1fr;gap:6px;align-items:baseline;padding:2px 0}
+.range-list li::before {content:'';width:6px;height:6px;border-radius:50%;background:var(--tone)}
+.range-list b {color:var(--tone);font-weight:600}
+@media(max-width:990px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.card-info,.readings{padding-inline:13px}}
+@media(max-width:640px){.grid{grid-template-columns:1fr;gap:12px}main{padding:15px 10px 24px}.readings{padding-inline:11px}.reading,.language-head{grid-template-columns:44px minmax(0,1fr);gap:5px}.values,.language-head > div{gap:6px}}
 </style>
 </head>
 <body>
@@ -65,9 +78,9 @@ a:focus-visible {outline:2px solid var(--info);outline-offset:2px}
   <section class="grid" aria-label="Metric cards for crysta and edi" id="cards"></section>
   <footer class="footer">
     <ul class="legend" aria-label="Result legend">
-      <li class="pass"><b aria-hidden="true">✓</b>Within target</li>
+      <li class="pass"><b aria-hidden="true">✓</b>Within reference</li>
       <li class="review"><b aria-hidden="true">!</b>Review</li>
-      <li class="fail"><b aria-hidden="true">×</b>Failed</li>
+      <li class="fail"><b aria-hidden="true">×</b>Needs attention</li>
       <li class="measured"><b aria-hidden="true">•</b>Measured</li>
       <li class="missing"><b aria-hidden="true">–</b>No report</li>
     </ul>
@@ -75,6 +88,7 @@ a:focus-visible {outline:2px solid var(--info);outline-offset:2px}
     <a href="trends.html">Trends and components ↗</a>
   </footer>
 </main>
+<div class="metric-tooltip" id="metric-tooltip" role="tooltip" hidden></div>
 <script type="application/json" id="dashboard-data">__DASHBOARD_DATA__</script>
 <script>
 'use strict';
@@ -86,144 +100,287 @@ const metricsByLanguage = {cpp:'static',python:'python_static'};
 const analysisByLanguage = {cpp:'Clang static analysis',python:'Ruff'};
 const coverageByLanguage = {cpp:'coverage',python:'python'};
 const docsByLanguage = {cpp:'docs',python:'python_docs'};
-const statusSymbols = {pass:'✓',review:'!',fail:'×',missing:'–'};
-const statusLabels = {pass:'Within target',review:'Review',fail:'Failed',missing:'No report'};
+const statusSymbols = {pass:'✓',review:'!',fail:'×'};
+const statusLabels = {pass:'Within reference',review:'Review',fail:'Needs attention',missing:'No report'};
 const format = new Intl.NumberFormat('en', {maximumFractionDigits:1});
-const number = value => Number.isFinite(value) ? format.format(value) : '—';
+const number = value => format.format(value);
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[character]);
-const color = (value, status = 'measured', detail = '', counts = '') => ({
-  value:value ?? 'No report', status:value == null ? 'missing' : status, detail, counts,
-});
-const basic = value => color(Number.isFinite(value) ? number(value) : null);
-const reviewLimits = {
-  p90: {cpp:12,python:10},
-  p90_cognitive: 15,
-  p90_length: 50,
-  p90_arguments: 5,
-  p90_exits: 8,
+
+const band = (tone, range, note) => ({tone, range, note});
+const measured = {
+  bands:[band('measured','Measured count','Size or volume. No target applies.')],
+  grade:()=> 'measured',
 };
-function limitFor(metric, language) {
-  const limit = reviewLimits[metric];
-  return typeof limit === 'number' ? limit : limit?.[language];
+const checks = {
+  bands:[
+    band('pass','Passed','The selected analysis completed successfully.'),
+    band('review','Partial','Only part of the selected analysis completed.'),
+    band('fail','Failed','The selected check reported a failure.'),
+    band('missing','Unavailable','No result, skipped, or cancelled.'),
+  ],
+};
+function atLeast(green, amber, unit, notes) {
+  const target = '≥ '+number(green)+unit;
+  const bands = [band('pass',target,notes.pass)];
+  if (amber != null) bands.push(band('review',number(amber)+unit+' to < '+number(green)+unit,notes.review));
+  bands.push(band('fail','< '+number(amber ?? green)+unit,notes.fail));
+  return {target, bands, grade:value=>value>=green ? 'pass' : amber!=null && value>=amber ? 'review' : 'fail'};
 }
-function functionMetric(source, key, language) {
-  const value = source?.[key];
-  if (!Number.isFinite(value)) return color(null);
-  const limit = limitFor(key, language);
-  return color(number(value),value<=limit?'pass':'review','P90 · advisory reference ≤ '+limit);
+function atMost(limit, unit, notes) {
+  const target = '≤ '+number(limit)+unit;
+  return {
+    target,
+    bands:[band('pass',target,notes.pass),band('review','> '+number(limit)+unit,notes.review)],
+    grade:value=>value<=limit ? 'pass' : 'review',
+  };
 }
-function maintainability(source) {
-  const value = source?.mi;
-  if (!Number.isFinite(value)) return color(null);
-  return color(number(value),value>=20?'pass':'review','Median file MI · Visual Studio reference, green at 20 or above');
+const maintainability = atLeast(20,10,'',{
+  pass:'Good on the Visual Studio scale.',
+  review:'Moderate maintainability.',
+  fail:'Low maintainability.',
+});
+const documentation = atLeast(80,50,'%',{
+  pass:'Meets the dashboard’s documentation reference.',
+  review:'Coverage has room to improve.',
+  fail:'Fewer than half of eligible items are documented.',
+});
+const documentationLines = band('measured','Lines after ·','BCA count across the measured source. No target applies.');
+documentation.bands.push(documentationLines);
+const densityChange = atMost(10,'%',{
+  pass:'Increase is within the advisory limit.',
+  review:'Functions per file rose by more than 10%.',
+});
+const densityReference = {
+  ...densityChange,
+  bands:[
+    ...densityChange.bands,
+    band('measured','No baseline','A prior positive ratio is needed to compute change.'),
+    band('measured','Counts after ·','Functions / files. No target applies to the counts.'),
+  ],
+};
+const unratedCoverage = {
+  bands:[band('measured','Measured coverage','This report has no declared CI target.')],
+  grade:()=> 'measured',
+};
+
+function reading(value, rule, detail = '', unit = '') {
+  if (!Number.isFinite(value)) return {value:'No report',status:'missing',rule,detail};
+  const status = rule.grade(value);
+  const formatted = rule.grade(Number(value.toFixed(1))) === status ? number(value) : String(value);
+  return {value:formatted+unit,status,rule,detail};
 }
-function currentSnapshot(project) {
-  return data.projects[project].samples.at(-1) ?? {};
+function analyzer(sample, language) {
+  const tool = analysisByLanguage[language];
+  const value = sample.checks?.[tool] ?? 'No report';
+  const detail = sample.checks_scope?.[tool] ? tool+' · '+sample.checks_scope[tool] : tool;
+  const statuses = {Clean:'pass',Passed:'pass',Failed:'fail',Partial:'review',Skipped:'missing',Cancelled:'missing'};
+  return {value,status:statuses[value] ?? 'missing',rule:checks,detail};
+}
+function functionMetric(key, limit) {
+  const rules = Object.fromEntries(languages.map(language=>[language,atMost(
+    typeof limit === 'number' ? limit : limit[language], '', {
+      pass:'Within the dashboard’s advisory limit.',
+      review:'Above the dashboard’s advisory limit.',
+    },
+  )]));
+  return (_project,language,_sample,source)=>reading(source?.[key],rules[language]);
 }
 function averageFunctions(report) {
   return report?.files > 0 && Number.isFinite(report.functions) ? report.functions / report.files : null;
 }
 function density(project, language, report) {
   const ratio = averageFunctions(report);
-  if (ratio == null) return color(null);
-  const sourceKey = metricsByLanguage[language];
-  const earlier = data.projects[project].samples.slice(0,-1).reverse();
-  const previous = earlier.map(sample=>averageFunctions(sample[sourceKey])).find(value=>value!=null);
-  const reference = Number.isFinite(previous) ? 'Previous measured ratio: '+number(previous) : 'No previous measured ratio';
-  const drift = previous > 0 ? (ratio/previous-1)*100 : null;
-  const threshold = 10;
-  const flag = drift != null && Number.isFinite(threshold) && drift > threshold;
-  return color(number(ratio),flag?'review':'measured',
-    number(report.functions)+' functions / '+number(report.files)+' files. '+reference+(drift == null ? '' : '. Change: '+number(drift)+'%.')+(Number.isFinite(threshold) ? ' Review above a '+threshold+'% increase.' : ''),
-    number(report.functions)+'/'+number(report.files));
+  if (ratio == null) return reading(null,densityReference);
+  const prior = data.projects[project].samples.slice(0,-1).reverse()
+    .map(sample=>averageFunctions(sample[metricsByLanguage[language]])).find(value=>value!=null);
+  const change = prior > 0 ? Math.round((ratio/prior-1)*1e8)/1e6 : null;
+  const detail = change == null ? 'No prior positive ratio for this project and language.'
+    : 'Previous ratio '+number(prior)+' · change '+(change>0?'+':'')+number(change)+'%.';
+  return {
+    value:number(ratio),status:change == null ? 'measured' : densityReference.grade(change),
+    rule:densityReference,detail,
+    counts:number(report.functions)+'/'+number(report.files),
+    countsLabel:number(report.functions)+' functions / '+number(report.files)+' files',
+  };
 }
-function analyzer(sample, language) {
-  const tool = analysisByLanguage[language];
-  const result = sample.checks?.[tool];
-  const detail = sample.checks_scope?.[tool] ? tool+' · '+sample.checks_scope[tool] : tool;
-  const statuses = {Clean:'pass',Passed:'pass',Failed:'fail',Partial:'review',Skipped:'missing',Cancelled:'missing'};
-  return Object.hasOwn(statuses,result) ? color(result,statuses[result],detail) : color(null,'missing',detail);
-}
-function coverage(sample, key, scope) {
-  const report = sample[key];
-  if (!(report?.total > 0)) return color(null,'missing',scope);
-  const value = report.covered*100/report.total;
-  const target = report.target ?? (data.demo ? data.demoTargets?.coverage?.[key] : null);
-  const status = Number.isFinite(target) ? (value>=target ? 'pass' : 'review') : 'measured';
-  return color(number(value)+'%',status,
-    number(report.covered)+' of '+number(report.total)+' '+scope+
-    (Number.isFinite(target) ? '. Target ≥ '+target+'%' : ''));
+function percent(report, rule, scope) {
+  const value = report?.total > 0 ? 100*report.covered/report.total : null;
+  const detail = value == null ? scope : number(report.covered)+' of '+number(report.total)+' '+scope;
+  return reading(value,rule,detail,'%');
 }
 function testCoverage(project, language, sample) {
-  const scope = language === 'cpp' ? 'executable C++ lines'
-    : project === 'crysta' ? 'public Python API entries' : 'Python package statements';
-  return coverage(sample,coverageByLanguage[language],scope);
+  const key = coverageByLanguage[language];
+  const report = sample[key];
+  const target = report?.target ?? (data.demo ? data.demoTargets?.coverage?.[key] : null);
+  const rule = Number.isFinite(target) ? atLeast(target,null,'%',{
+    pass:'Meets this project’s CI coverage target.',
+    fail:'Below this project’s CI coverage target.',
+  }) : unratedCoverage;
+  const scope = language === 'cpp' ? 'executable C++ lines covered'
+    : project === 'crysta' ? 'public Python API entries exercised' : 'Python package statements covered';
+  return percent(report,rule,scope);
 }
-function documentation(language, sample, source) {
-  const scope = language === 'cpp' ? 'public header declarations' : 'handwritten Python modules, classes and callables';
-  const result = coverage(sample,docsByLanguage[language],scope);
+function apiDocs(language, sample, source) {
+  const scope = language === 'cpp' ? 'public header declarations documented (Doxygen)'
+    : 'handwritten Python modules, classes and callables with docstrings';
+  const result = percent(sample[docsByLanguage[language]],documentation,scope);
   const lines = source?.documentation_lines;
   if (Number.isFinite(lines)) {
     result.counts = number(lines);
-    result.detail += '. '+result.counts+' documentation lines across measured source (BCA)';
+    result.countsLabel = result.counts+' documentation lines across measured source (BCA)';
+    result.detail += '. '+result.countsLabel+'.';
   }
   return result;
 }
 const groups = {
   verification: [
-    {icon:'quality',name:'Static checks',hint:'CI status',columns:{cpp:'C++ · clang-tidy',python:'Python · Ruff'},help:'Static analysis results from CI. The C++ check scope varies by project.',read:(project,language,sample)=>analyzer(sample,language)},
-    {icon:'coverage',name:'Test coverage',hint:'Unit tier',help:'C++ executable lines. Python measures public API entries in crysta and package statements in edi.',read:testCoverage},
-    {icon:'coverage',name:'API documentation',hint:'% · lines',columns:{cpp:'C++ · Doxygen',python:'Python · docstrings'},help:'Percentage of eligible declarations with documentation, followed by documentation lines across measured source.',read:(project,language,sample,source)=>documentation(language,sample,source)},
+    {name:'Static checks',hint:'CI status',columns:{cpp:'C++ · clang-tidy',python:'Python · Ruff'},help:'Static analysis outcomes from CI. The C++ check scope varies by project.',read:(_project,language,sample)=>analyzer(sample,language)},
+    {name:'Test coverage',hint:'Unit tier',help:'C++ counts executable lines. Python counts public API entries in crysta and package statements in edi. The green cutoff comes from each project’s CI configuration.',read:testCoverage},
+    {name:'API documentation',hint:'% · lines',help:'Share of eligible items with documentation. C++ uses Doxygen public header declarations. Python uses handwritten docstrings. The percentage bands are dashboard references.',read:(_project,language,sample,source)=>apiDocs(language,sample,source)},
   ],
   maintainability: [
-    {icon:'quality',name:'Maintainability index',hint:'File median',help:'BCA · file median, Visual Studio MI scale (0–100)',read:(project,language,sample,source)=>maintainability(source)},
-    {icon:'quality',name:'Cyclomatic complexity',hint:'P90',percentile:'p90',help:'BCA · 90th percentile of function McCabe scores',read:(project,language,sample,source)=>functionMetric(source,'p90',language)},
-    {icon:'quality',name:'Cognitive complexity',hint:'P90',percentile:'p90_cognitive',help:'BCA · 90th percentile of function cognitive complexity',read:(project,language,sample,source)=>functionMetric(source,'p90_cognitive',language)},
+    {name:'Maintainability index',hint:'0–100',help:'BCA’s median file score on the Visual Studio index (0–100). Higher is better. It combines code size, cyclomatic complexity and Halstead volume.',read:(_project,_language,_sample,source)=>reading(source?.mi,maintainability)},
+    {name:'Cyclomatic complexity',hint:'P90',help:'BCA’s 90th percentile of independent control-flow paths per function. Lower is better.',read:functionMetric('p90',{cpp:12,python:10})},
+    {name:'Cognitive complexity',hint:'P90',help:'BCA’s 90th percentile of how hard a function’s control flow is to follow, including nesting. Lower is better.',read:functionMetric('p90_cognitive',15)},
   ],
   functions: [
-    {icon:'size',name:'Function length',hint:'P90 · lines',percentile:'p90_length',help:'BCA · 90th percentile of physical code lines per function',read:(project,language,sample,source)=>functionMetric(source,'p90_length',language)},
-    {icon:'size',name:'Function arguments',hint:'P90',percentile:'p90_arguments',help:'BCA · 90th percentile of arguments per callable',read:(project,language,sample,source)=>functionMetric(source,'p90_arguments',language)},
-    {icon:'size',name:'Function exits',hint:'P90',percentile:'p90_exits',help:'BCA · 90th percentile of explicit exits per function',read:(project,language,sample,source)=>functionMetric(source,'p90_exits',language)},
+    {name:'Function length',hint:'P90 · lines',help:'BCA’s 90th percentile of physical code lines per function.',read:functionMetric('p90_length',50)},
+    {name:'Function arguments',hint:'P90',help:'BCA’s 90th percentile of arguments per callable.',read:functionMetric('p90_arguments',5)},
+    {name:'Function exits',hint:'P90',help:'BCA’s 90th percentile of explicit exits per function.',read:functionMetric('p90_exits',8)},
   ],
   size: [
-    {icon:'size',name:'Physical code lines',hint:'Code only',help:'BCA · physical code lines excluding blank and comment-only lines',read:(project,language,sample,source)=>basic(source?.components?.reduce((sum,item)=>sum+item.lines,0))},
-    {icon:'size',name:'Logical lines',hint:'Syntax-based',help:'BCA · logical lines of code',read:(project,language,sample,source)=>basic(source?.logical)},
-    {icon:'size',name:'Functions / files',hint:'Ratio · counts',help:'Functions per file, followed by function and file counts. Amber marks a rise of more than 10% from the previous measurement.',read:(project,language,sample,source)=>density(project,language,source)},
+    {name:'Physical code lines',hint:'Code only',help:'BCA physical code lines excluding blank and comment-only lines.',read:(_project,_language,_sample,source)=>reading(source?.components?.reduce((sum,item)=>sum+item.lines,0),measured)},
+    {name:'Logical lines',hint:'Syntax-based',help:'BCA logical code lines counted from syntax, regardless of how the code is wrapped on screen.',read:(_project,_language,_sample,source)=>reading(source?.logical,measured)},
+    {name:'Functions / files',hint:'Δ vs. prior',targetPrefix:'Δ ',help:'Average functions per file, followed by the raw function and file counts. The color compares percentage change against the previous measured snapshot for the same project and language.',read:(project,language,_sample,source)=>density(project,language,source)},
   ],
 };
-function resultCell(result, language) {
-  const label = labels[language]+' ';
-  const detail = result.detail ? ' title="'+escapeHtml(result.detail)+'"' : '';
-  const extra = ['Clean','Passed','Failed','No report'].includes(result.value) ? '' : statusLabels[result.status];
-  return '<span class="result '+result.status+'"'+detail+'>'+
-    '<span class="sr">'+label+'</span>'+
-    (Object.hasOwn(statusSymbols,result.status) && result.value !== 'No report' ? '<span class="mark" aria-hidden="true">'+statusSymbols[result.status]+' </span>' : '')+
-    '<span class="value">'+escapeHtml(result.value)+'</span>'+
-    (result.counts ? '<span class="counts">'+escapeHtml(result.counts)+'</span>' : '')+
-    (extra ? '<span class="sr"> '+extra+'</span>' : '')+'</span>';
+
+const tooltipContent = [];
+function infoId(content) {
+  return tooltipContent.push(content)-1;
 }
-function cardRow(card, project) {
-  const snapshot = currentSnapshot(project);
-  const results = languages.map(language=>
-    resultCell(card.read(project,language,snapshot,snapshot[metricsByLanguage[language]]),language));
-  return '<div class="reading"><span>'+project+'</span><div class="values">'+results.join('')+'</div></div>';
+function resultCell(card, result, project, language) {
+  const {value,status,counts,countsLabel,detail,rule} = result;
+  const title = card.name+' · '+project+' '+labels[language];
+  const id = infoId({title,description:detail || card.help,references:[{bands:rule.bands}]});
+  const label = title+' · '+value+(countsLabel ? ' · '+countsLabel : '')+(statusLabels[status] ? ' · '+statusLabels[status] : '');
+  const mark = Object.hasOwn(statusSymbols,status)
+    ? '<span class="mark" aria-hidden="true">'+statusSymbols[status]+'</span>' : '';
+  return '<button type="button" class="info-trigger result '+status+'" data-info="'+id+'" aria-label="'+
+    escapeHtml(label)+'">'+mark+'<span class="value">'+escapeHtml(value)+'</span>'+
+    (counts ? '<span class="counts">'+escapeHtml(counts)+'</span>' : '')+'</button>';
+}
+function headingReferences(rows) {
+  const unique = new Map();
+  for (const {project, results} of rows) {
+    for (const [index, {rule}] of results.entries()) {
+      const key = JSON.stringify(rule.bands);
+      if (!unique.has(key)) unique.set(key,{bands:rule.bands, labels:[]});
+      unique.get(key).labels.push({project,language:labels[languages[index]]});
+    }
+  }
+  return [...unique.values()].map(({bands,labels:scopes})=>{
+    const matchesLanguage = scopes.every(scope=>scope.language===scopes[0].language);
+    const name = matchesLanguage && scopes.length===projects.length ? scopes[0].language
+      : scopes.map(scope=>scope.project+' '+scope.language).join(' · ');
+    return {bands,name:unique.size>1 ? name : ''};
+  });
 }
 function renderCard(group, card) {
-  const heads = languages.map(language=>{
-    const target = limitFor(card.percentile,language);
-    const label = card.columns?.[language] ?? (labels[language]+(Number.isFinite(target) ? ' ≤ '+target : ''));
-    return '<span>'+escapeHtml(label)+'</span>';
+  const rows = projects.map(project=>{
+    const snapshot = data.projects[project].samples.at(-1) ?? {};
+    const results = languages.map(language=>card.read(project,language,snapshot,snapshot[metricsByLanguage[language]]));
+    return {project,results};
+  });
+  const heads = languages.map((language,index)=>{
+    const targets = [...new Set(rows.map(({results})=>results[index].rule.target).filter(Boolean))];
+    const suffix = targets.length===1 ? ' '+(card.targetPrefix ?? '')+targets[0] : targets.length>1 ? ' · per project' : '';
+    return '<span>'+escapeHtml(card.columns?.[language] ?? labels[language]+suffix)+'</span>';
   }).join('');
-  return '<article class="card" data-group="'+group+'" title="'+escapeHtml(card.help)+'"><h2>'+
-    '<span class="icon icon-'+card.icon+'" aria-hidden="true"></span>'+card.name+
-    '<span class="hint">'+card.hint+'</span></h2><div class="readings">'+
-    '<div class="language-head" aria-hidden="true"><div></div><div>'+heads+'</div></div>'+
-    projects.map(project=>cardRow(card,project)).join('')+'</div></article>';
+  const readings = rows.map(({project,results})=>'<div class="reading"><span>'+project+'</span><div class="values">'+
+    results.map((result,index)=>resultCell(card,result,project,languages[index])).join('')+'</div></div>').join('');
+  const id = infoId({title:card.name,description:card.help,references:headingReferences(rows)});
+  return '<article class="card" data-group="'+group+'"><h2><button type="button" class="info-trigger card-info" data-info="'+id+'">'+
+    '<span class="icon icon-'+group+'" aria-hidden="true"></span><span>'+card.name+'</span>'+
+    '<span class="hint">'+card.hint+'</span><span class="help-mark" aria-hidden="true">i</span></button></h2><div class="readings">'+
+    '<div class="language-head" aria-hidden="true"><div></div><div>'+heads+'</div></div>'+readings+'</div></article>';
 }
 document.querySelector('#demo-label').hidden = !data.demo;
 document.querySelector('#cards').innerHTML = Object.entries(groups)
   .flatMap(([group,cards])=>cards.map(card=>renderCard(group,card))).join('');
+
+const tooltip = document.querySelector('#metric-tooltip');
+let activeTrigger;
+let pinned = false;
+let closeTimer;
+function positionTooltip() {
+  if (!activeTrigger) return;
+  const anchor = activeTrigger.getBoundingClientRect();
+  const width = document.documentElement.clientWidth;
+  const height = document.documentElement.clientHeight;
+  const maxLeft = width-tooltip.offsetWidth-12;
+  const left = Math.min(Math.max(12,anchor.left),maxLeft);
+  const below = anchor.bottom+6;
+  const above = anchor.top-tooltip.offsetHeight-6;
+  const top = below+tooltip.offsetHeight <= height-12 ? below : Math.max(12,above);
+  tooltip.style.left = left+'px';
+  tooltip.style.top = top+'px';
+}
+function hideTooltip() {
+  clearTimeout(closeTimer);
+  activeTrigger?.removeAttribute('aria-describedby');
+  activeTrigger = null;
+  pinned = false;
+  tooltip.hidden = true;
+}
+function showTooltip(trigger) {
+  clearTimeout(closeTimer);
+  if (trigger===activeTrigger) return;
+  hideTooltip();
+  const {title,description,references} = tooltipContent[trigger.dataset.info];
+  tooltip.innerHTML = '<strong>'+escapeHtml(title)+'</strong><p>'+escapeHtml(description)+'</p>'+
+    references.map(({name,bands})=>(name ? '<span class="range-label">'+escapeHtml(name)+'</span>' : '')+
+      '<ul class="range-list">'+bands.map(({tone,range,note})=>'<li class="'+tone+'"><b>'+escapeHtml(range)+
+        '</b><span>'+escapeHtml(note)+'</span></li>').join('')+'</ul>').join('');
+  activeTrigger = trigger;
+  trigger.setAttribute('aria-describedby',tooltip.id);
+  tooltip.hidden = false;
+  positionTooltip();
+}
+function scheduleClose() {
+  clearTimeout(closeTimer);
+  if (!pinned && !activeTrigger?.matches(':focus-visible')) closeTimer = setTimeout(hideTooltip,140);
+}
+for (const trigger of document.querySelectorAll('.info-trigger')) {
+  trigger.addEventListener('pointerenter',event=>{
+    if (event.pointerType!=='touch' && !pinned) showTooltip(trigger);
+  });
+  trigger.addEventListener('pointerleave',()=>{
+    if (activeTrigger===trigger) scheduleClose();
+  });
+  trigger.addEventListener('focus',()=>showTooltip(trigger));
+  trigger.addEventListener('blur',()=>{
+    if (activeTrigger===trigger) hideTooltip();
+  });
+  trigger.addEventListener('click',()=>{
+    if (activeTrigger===trigger && pinned) hideTooltip();
+    else {
+      showTooltip(trigger);
+      pinned = true;
+    }
+  });
+}
+tooltip.addEventListener('pointerenter',()=>clearTimeout(closeTimer));
+tooltip.addEventListener('pointerleave',scheduleClose);
+document.addEventListener('click',event=>{
+  if (!event.target.closest('.info-trigger, .metric-tooltip')) hideTooltip();
+});
+document.addEventListener('keydown',event=>{
+  if (event.key==='Escape') hideTooltip();
+});
+window.addEventListener('resize',positionTooltip);
+window.addEventListener('scroll',positionTooltip,{passive:true});
 </script>
 </body>
 </html>

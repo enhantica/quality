@@ -35,9 +35,13 @@ python3 scripts/render.py --data /tmp/quality.json --trends --output dist/trends
 
 ### Dashboard colors
 
-Green marks a passed check or a value within its target or advisory reference. Amber flags a value for review. Red identifies a failed check. Blue marks measured counts and other values without targets. Gray marks unavailable results.
+Hover over, focus, or tap a card heading or value to see its definition and color bands. Green marks a passed check or a value within its reference. Amber flags a value for review. Red flags a failed check or a value that warrants attention. Blue marks measurements without a target. Gray marks unavailable results.
 
-Function P90 references are presentation defaults and do not change product CI gates. The dashboard starts with McCabe complexity at 12 for C++ and 10 for Python, cognitive complexity at 15, function length at 50 physical lines, arguments at 5, and explicit exits at 8. The median file MI uses the Visual Studio green boundary of 20. Functions per file is a measured ratio, with a review signal for an increase above 10% from the previous sample. Test coverage keeps each producer's declared target.
+- BCA's median file maintainability index is a score on the 0–100 scale. This view uses the [Visual Studio reference](https://learn.microsoft.com/en-us/visualstudio/code-quality/code-metrics-maintainability-index-range-and-meaning), with green at 20 or higher, amber from 10 to below 20, and red below 10.
+- Test coverage uses each producer's declared CI target. It is green at or above the target and red below it.
+- API documentation coverage uses dashboard advisory bands. It is green at 80% or higher, amber from 50% to below 80%, and red below 50%. The adjacent documentation-line count is blue.
+- Function P90 advisory limits are at most 12 for C++ McCabe complexity, 10 for Python McCabe complexity, 15 for cognitive complexity, 50 physical lines, 5 arguments, and 8 explicit exits. Green is within the limit and amber is above it.
+- Functions per file is green for an increase of at most 10% against the previous ratio and amber for larger increases. It is blue when there is no prior positive ratio for the same project and language. The function and file counts are blue.
 
 ### edi measurement workflow
 
