@@ -7,7 +7,7 @@
       "samples": [
         {
           "sha": "7121efe84a06e9d6727e0401b2f1c56a80ebeb6d",
-          "date": "2026-11-19T12:21:36.726385+00:00",
+          "date": "2026-11-19T12:33:58.929067+00:00",
           "static": {
             "mi": 30.96124698716138,
             "p90": 9,
@@ -108,7 +108,10 @@
             "covered": 307,
             "total": 3090
           },
-          "checks": {},
+          "checks": {
+            "Clang static analysis": "Passed",
+            "Ruff": "Passed"
+          },
           "ci_url": null,
           "coverage_settings": {
             "coverage": {
@@ -119,7 +122,19 @@
               "target": 80,
               "line": 279
             }
-          }
+          },
+          "coverage": {
+            "covered": 46551,
+            "total": 57406,
+            "target": 80
+          },
+          "measurement_run": 44522543350,
+          "checks_url": "https://github.com/enhantica/quality/actions/runs/44522543350",
+          "checks_scope": {
+            "Clang static analysis": "Pinned SDK's Linux clang-tidy task",
+            "Ruff": "Pinned SDK's Ruff lint and format checks"
+          },
+          "coverage_url": "https://github.com/enhantica/quality/actions/runs/44522543350"
         }
       ],
       "pins": {
@@ -342,7 +357,10 @@
             "covered": 307,
             "total": 3090
           },
-          "checks": {},
+          "checks": {
+            "Clang static analysis": "Passed",
+            "Ruff": "Passed"
+          },
           "ci_url": null,
           "coverage_settings": {
             "coverage": {
@@ -353,7 +371,19 @@
               "target": 80,
               "line": 279
             }
-          }
+          },
+          "coverage": {
+            "covered": 46551,
+            "total": 57406,
+            "target": 80
+          },
+          "measurement_run": 44522543350,
+          "checks_url": "https://github.com/enhantica/quality/actions/runs/44522543350",
+          "checks_scope": {
+            "Clang static analysis": "Pinned SDK's Linux clang-tidy task",
+            "Ruff": "Pinned SDK's Ruff lint and format checks"
+          },
+          "coverage_url": "https://github.com/enhantica/quality/actions/runs/44522543350"
         },
         "7e1c783c4a7b4a7d3973405ec414f685eaf88fae": {
           "sha": "7e1c783c4a7b4a7d3973405ec414f685eaf88fae",
@@ -718,7 +748,7 @@
       "samples": [
         {
           "sha": "7fdd08055df9e6f9d759fd68e622fc1e55622f44",
-          "date": "2026-11-19T12:21:36.726385+00:00",
+          "date": "2026-11-19T12:33:58.929067+00:00",
           "static": {
             "mi": 26.272617179799585,
             "p90": 14,
