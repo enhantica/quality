@@ -13,7 +13,7 @@ python3 scripts/render.py --trends --output dist/trends.html
 
 ## Collection and publishing
 
-The workflow runs on this repo’s main branch, on dispatch, and weekly. Enable GitHub Actions as the Pages source. Until live publication is enabled, deploys contain only the demo.
+The dashboard refreshes every Monday at 08:25 Europe/Copenhagen time, on pushes to this repo’s main branch, and on dispatch. The edi measurement workflow runs every Monday at 07:15 and also triggers a dashboard refresh after a successful run. Enable GitHub Actions as the Pages source. Until live publication is enabled, deploys contain only the demo.
 
 The collector requests read access to Actions and Contents for both product repositories. It uses the existing Enhantica app configuration by default. The repository variable `QUALITY_APP_ID` and secret `QUALITY_APP_KEY` can point it to a different app.
 
@@ -35,13 +35,23 @@ python3 scripts/render.py --data /tmp/quality.json --trends --output dist/trends
 
 ### Dashboard colors
 
-Hover over, focus, or tap a card heading or value to see its definition, color bands, and the source of each cutoff. Green marks a passed check or a value within its reference. Amber flags a value for review. Red flags a failed check or a value that warrants attention. Blue marks measurements without a target. Gray marks unavailable results.
+Hover over, focus, or tap a card heading or value to see its definition and color bands. Select the source link to open the recommendation, dashboard policy, or the CI setting at the measured commit. Green marks a passed check or a value within its reference. Amber flags a value for review. Red flags a failed check or a value that warrants attention. Blue marks measurements without a target. Gray marks unavailable results.
 
 - BCA's median file maintainability index is a score on the 0–100 scale. This view uses the [Visual Studio reference](https://learn.microsoft.com/en-us/visualstudio/code-quality/code-metrics-maintainability-index-range-and-meaning), with green at 20 or higher, amber from 10 to below 20, and red below 10.
 - Test coverage uses each producer's declared CI target. It is green at or above the target and red below it.
-- API documentation coverage uses dashboard advisory bands. It is green at 80% or higher, amber from 50% to below 80%, and red below 50%. The adjacent documentation-line count is blue.
-- Function P90 is green at or below its reference and amber above it. The dashboard uses **10** for cyclomatic complexity from [NIST SP 500-235, §2.5](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication500-235.pdf#page=25), **25 for C++ and 15 for Python** cognitive complexity from [SonarSource S3776](https://community.sonarsource.com/t/cognitive-complexity-for-python-vs-c/45303), and **5 arguments and 5 explicit exits** from the [BCA 2.6.0 defaults](https://github.com/dekobon/big-code-analysis/blob/v2.6.0/big-code-analysis-cli/src/default_thresholds.rs). These published per-function references are applied to BCA’s 90th-percentile summaries. The **50 physical code lines** reference for function length is dashboard policy.
-- Functions per file is green for an increase of at most 10% against the previous ratio and amber for larger increases. It is blue when there is no prior positive ratio for the same project and language. The function and file counts are blue.
+- Function P90 is green at or below its reference and amber above it. The dashboard uses **10** for cyclomatic complexity from [NIST SP 500-235, §2.5](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication500-235.pdf#page=25), **25 for C++ and 15 for Python** cognitive complexity from [SonarSource S3776](https://community.sonarsource.com/t/cognitive-complexity-for-python-vs-c/45303), and **5 arguments and 5 explicit exits** from the [BCA 2.6.0 defaults](https://github.com/dekobon/big-code-analysis/blob/v2.6.0/big-code-analysis-cli/src/default_thresholds.rs). These published per-function references are applied to BCA’s 90th-percentile summaries.
+
+#### API documentation
+
+The dashboard uses advisory coverage bands. Green is 80% or higher, amber is 50% to below 80%, and red is below 50%. The adjacent documentation-line count is blue.
+
+#### Function length
+
+The dashboard uses 50 physical code lines as its P90 reference. Green is at or below 50 and amber is above it.
+
+#### Functions per file
+
+The dashboard marks increases of at most 10% from the previous ratio as green and larger increases as amber. It uses blue when there is no prior positive ratio for the same project and language. The function and file counts are blue.
 
 ### edi measurement workflow
 

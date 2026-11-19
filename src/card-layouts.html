@@ -65,9 +65,10 @@ a:focus-visible {outline:2px solid var(--info);outline-offset:2px}
 .metric-tooltip strong {display:block;color:var(--text);font-size:var(--font-metric)}
 .metric-tooltip p {margin:4px 0 8px}
 .range-label {display:block;margin-top:9px;color:var(--text);font-weight:600}
-.range-list {margin:4px 0 0;padding:0;list-style:none}
-.range-list li {display:grid;grid-template-columns:7px max-content 1fr;gap:6px;align-items:baseline;padding:2px 0}
-.range-list li::before {content:'';width:6px;height:6px;border-radius:50%;background:var(--tone)}
+.range-label a {text-decoration-thickness:1px}
+.range-list {display:grid;grid-template-columns:7px max-content minmax(0,1fr);column-gap:6px;margin:4px 0 0;padding:0;list-style:none}
+.range-list li {display:grid;grid-column:1/-1;grid-template-columns:subgrid;align-items:baseline;padding:2px 0}
+.range-list li::before {content:'';width:6px;height:6px;margin-top:.46em;align-self:start;border-radius:50%;background:var(--tone)}
 .range-list b {color:var(--tone);font-weight:600}
 @media(max-width:990px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.card-info,.readings{padding-inline:13px}}
 @media(max-width:640px){.grid{grid-template-columns:1fr;gap:12px}main{padding:15px 10px 24px}.readings{padding-inline:11px}.reading,.language-head{grid-template-columns:44px minmax(0,1fr);gap:5px}.values,.language-head > div{gap:6px}}
@@ -88,7 +89,7 @@ a:focus-visible {outline:2px solid var(--info);outline-offset:2px}
     <a href="trends.html">Trends and components ↗</a>
   </footer>
 </main>
-<div class="metric-tooltip" id="metric-tooltip" role="tooltip" hidden></div>
+<div class="metric-tooltip" id="metric-tooltip" role="region" aria-labelledby="metric-tooltip-title" hidden></div>
 <script type="application/json" id="dashboard-data">__DASHBOARD_DATA__</script>
 <script>
 'use strict';
@@ -108,21 +109,25 @@ const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[character]);
 
 const band = (tone, range, note) => ({tone, range, note});
+const reference = (label, href) => ({label,href});
+const bcaDefaults = 'https://github.com/dekobon/big-code-analysis/blob/v2.6.0/big-code-analysis-cli/src/default_thresholds.rs';
+const dashboardPolicy = 'https://github.com/enhantica/quality/blob/main/README.md';
 const rangeSources = {
-  visualStudio:'Tool reference · Visual Studio',
-  sonar:'Tool reference · SonarSource S3776',
-  bca:'Tool reference · BCA 2.6.0 defaults',
-  nist:'Published guideline · NIST SP 500-235 §2.5',
-  ci:'Project CI · pyproject.toml',
-  dashboard:'Dashboard policy',
+  visualStudio:reference('Tool reference · Visual Studio','https://learn.microsoft.com/en-us/visualstudio/code-quality/code-metrics-maintainability-index-range-and-meaning#in-this-article'),
+  sonar:reference('Tool reference · SonarSource S3776','https://community.sonarsource.com/t/cognitive-complexity-for-python-vs-c/45303/2'),
+  bcaArguments:reference('Tool reference · BCA 2.6.0 defaults',bcaDefaults+'#L85-L86'),
+  bcaExits:reference('Tool reference · BCA 2.6.0 defaults',bcaDefaults+'#L95-L96'),
+  nist:reference('Published guideline · NIST SP 500-235 §2.5','https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication500-235.pdf#page=25'),
+  documentation:reference('Dashboard policy',dashboardPolicy+'#api-documentation'),
+  length:reference('Dashboard policy',dashboardPolicy+'#function-length'),
+  density:reference('Dashboard policy',dashboardPolicy+'#functions-per-file'),
 };
 const measured = {
-  source:'BCA measurement · no cutoff',
+  source:reference('BCA measurement · no cutoff','https://dekobon.github.io/big-code-analysis/metrics.html#lines-of-code-loc'),
   bands:[band('measured','Measured count','Size or volume. No target applies.')],
   grade:()=> 'measured',
 };
 const checks = {
-  source:'Project CI · clang-tidy and Ruff results',
   bands:[
     band('pass','Passed','The selected analysis completed successfully.'),
     band('review','Partial','Only part of the selected analysis completed.'),
@@ -151,14 +156,14 @@ const maintainability = atLeast(20,10,'',rangeSources.visualStudio,{
   review:'Moderate maintainability.',
   fail:'Low maintainability.',
 });
-const documentation = atLeast(80,50,'%',rangeSources.dashboard,{
+const documentation = atLeast(80,50,'%',rangeSources.documentation,{
   pass:'Meets the dashboard’s documentation reference.',
   review:'Coverage has room to improve.',
   fail:'Fewer than half of eligible items are documented.',
 });
 const documentationLines = band('measured','Lines after ·','BCA count across the measured source. No target applies.');
 documentation.bands.push(documentationLines);
-const densityChange = atMost(10,'%',rangeSources.dashboard,{
+const densityChange = atMost(10,'%',rangeSources.density,{
   pass:'Increase is within the advisory limit.',
   review:'Functions per file rose by more than 10%.',
 });
@@ -171,7 +176,7 @@ const densityReference = {
   ],
 };
 const unratedCoverage = {
-  source:'Coverage report · no declared CI target',
+  source:reference('Coverage report · no declared CI target'),
   bands:[band('measured','Measured coverage','This report has no declared CI target.')],
   grade:()=> 'measured',
 };
@@ -187,7 +192,10 @@ function analyzer(sample, language) {
   const value = sample.checks?.[tool] ?? 'No report';
   const detail = sample.checks_scope?.[tool] ? tool+' · '+sample.checks_scope[tool] : tool;
   const statuses = {Clean:'pass',Passed:'pass',Failed:'fail',Partial:'review',Skipped:'missing',Cancelled:'missing'};
-  return {value,status:statuses[value] ?? 'missing',rule:checks,detail};
+  const run = sample.checks_url ?? sample.ci_url;
+  const runHref = /^https:\/\/github\.com\/enhantica\/(?:crysta|edi|quality)\/actions\/runs\/\d+$/.test(run) ? run : null;
+  const source = reference('Project CI · clang-tidy and Ruff results',runHref);
+  return {value,status:statuses[value] ?? 'missing',rule:{...checks,source},detail};
 }
 function functionMetric(key, limit, reference) {
   const rules = Object.fromEntries(languages.map(language=>[language,atMost(
@@ -224,8 +232,15 @@ function percent(report, rule, scope) {
 function testCoverage(project, language, sample) {
   const key = coverageByLanguage[language];
   const report = sample[key];
-  const target = report?.target ?? (data.demo ? data.demoTargets?.coverage?.[key] : null);
-  const source = data.demo ? 'Demo data · illustrative target' : rangeSources.ci;
+  const setting = sample.coverage_settings?.[key];
+  const target = setting?.target ?? report?.target ?? (data.demo ? data.demoTargets?.coverage?.[key] : null);
+  const manifest = /^[0-9a-f]{40}$/.test(sample.sha)
+    ? 'https://github.com/enhantica/'+project+'/blob/'+sample.sha+'/pyproject.toml'
+    : null;
+  const anchor = Number.isInteger(setting?.line) && setting.line > 0 ? '#L'+setting.line : '';
+  const source = data.demo
+    ? reference('Demo data · illustrative target')
+    : reference('Project CI · pyproject.toml',manifest ? manifest+anchor : null);
   const rule = Number.isFinite(target) ? atLeast(target,null,'%',source,{
     pass:'Meets the coverage target.',
     fail:'Below the coverage target.',
@@ -258,9 +273,9 @@ const groups = {
     {name:'Cognitive complexity',hint:'P90',help:'BCA’s 90th percentile of how hard a function’s control flow is to follow. SonarSource’s per-function defaults serve as the P90 references.',read:functionMetric('p90_cognitive',{cpp:25,python:15},rangeSources.sonar)},
   ],
   functions: [
-    {name:'Function length',hint:'P90 · lines',help:'BCA’s 90th percentile of physical code lines per function.',read:functionMetric('p90_length',50,rangeSources.dashboard)},
-    {name:'Function arguments',hint:'P90',help:'BCA’s 90th percentile of arguments per callable. The per-function BCA default serves as the P90 reference.',read:functionMetric('p90_arguments',5,rangeSources.bca)},
-    {name:'Function exits',hint:'P90',help:'BCA’s 90th percentile of explicit exits per function. The per-function BCA default serves as the P90 reference.',read:functionMetric('p90_exits',5,rangeSources.bca)},
+    {name:'Function length',hint:'P90 · lines',help:'BCA’s 90th percentile of physical code lines per function.',read:functionMetric('p90_length',50,rangeSources.length)},
+    {name:'Function arguments',hint:'P90',help:'BCA’s 90th percentile of arguments per callable. The per-function BCA default serves as the P90 reference.',read:functionMetric('p90_arguments',5,rangeSources.bcaArguments)},
+    {name:'Function exits',hint:'P90',help:'BCA’s 90th percentile of explicit exits per function. The per-function BCA default serves as the P90 reference.',read:functionMetric('p90_exits',5,rangeSources.bcaExits)},
   ],
   size: [
     {name:'Physical code lines',hint:'Code only',help:'BCA physical code lines excluding blank and comment-only lines.',read:(_project,_language,_sample,source)=>reading(source?.components?.reduce((sum,item)=>sum+item.lines,0),measured)},
@@ -280,7 +295,7 @@ function resultCell(card, result, project, language) {
   const label = title+' · '+value+(countsLabel ? ' · '+countsLabel : '')+(statusLabels[status] ? ' · '+statusLabels[status] : '');
   const mark = Object.hasOwn(statusSymbols,status)
     ? '<span class="mark" aria-hidden="true">'+statusSymbols[status]+'</span>' : '';
-  return '<button type="button" class="info-trigger result '+status+'" data-info="'+id+'" aria-label="'+
+  return '<button type="button" class="info-trigger result '+status+'" data-info="'+id+'" aria-controls="metric-tooltip" aria-expanded="false" aria-label="'+
     escapeHtml(label)+'">'+mark+'<span class="value">'+escapeHtml(value)+'</span>'+
     (counts ? '<span class="counts">'+escapeHtml(counts)+'</span>' : '')+'</button>';
 }
@@ -294,8 +309,9 @@ function headingReferences(rows) {
     }
   }
   return [...unique.values()].map(({rule,scopes})=>{
-    const matchesLanguage = scopes.every(scope=>scope.language===scopes[0].language);
-    const name = matchesLanguage && scopes.length===projects.length ? scopes[0].language
+    const byLanguage = scopes.every(scope=>scope.language===scopes[0].language) && scopes.length===projects.length;
+    const byProject = scopes.every(scope=>scope.project===scopes[0].project) && scopes.length===languages.length;
+    const name = byLanguage ? scopes[0].language : byProject ? scopes[0].project
       : scopes.map(scope=>scope.project+' '+scope.language).join(' · ');
     return {...rule,name:unique.size>1 ? name : ''};
   });
@@ -314,7 +330,7 @@ function renderCard(group, card) {
   const readings = rows.map(({project,results})=>'<div class="reading"><span>'+project+'</span><div class="values">'+
     results.map((result,index)=>resultCell(card,result,project,languages[index])).join('')+'</div></div>').join('');
   const id = infoId({title:card.name,description:card.help,references:headingReferences(rows)});
-  return '<article class="card" data-group="'+group+'"><h2><button type="button" class="info-trigger card-info" data-info="'+id+'">'+
+  return '<article class="card" data-group="'+group+'"><h2><button type="button" class="info-trigger card-info" data-info="'+id+'" aria-controls="metric-tooltip" aria-expanded="false">'+
     '<span class="icon icon-'+group+'" aria-hidden="true"></span><span>'+card.name+'</span>'+
     '<span class="hint">'+card.hint+'</span><span class="help-mark" aria-hidden="true">i</span></button></h2><div class="readings">'+
     '<div class="language-head" aria-hidden="true"><div></div><div>'+heads+'</div></div>'+readings+'</div></article>';
@@ -343,6 +359,7 @@ function positionTooltip() {
 function hideTooltip() {
   clearTimeout(closeTimer);
   activeTrigger?.removeAttribute('aria-describedby');
+  activeTrigger?.setAttribute('aria-expanded','false');
   activeTrigger = null;
   pinned = false;
   tooltip.hidden = true;
@@ -352,30 +369,40 @@ function showTooltip(trigger) {
   if (trigger===activeTrigger) return;
   hideTooltip();
   const {title,description,references} = tooltipContent[trigger.dataset.info];
-  tooltip.innerHTML = '<strong>'+escapeHtml(title)+'</strong><p>'+escapeHtml(description)+'</p>'+
-    references.map(({name,source,bands})=>'<span class="range-label">'+
-      escapeHtml(name ? name+' · '+source : source)+'</span>'+
-      '<ul class="range-list">'+bands.map(({tone,range,note})=>'<li class="'+tone+'"><b>'+escapeHtml(range)+
-        '</b><span>'+escapeHtml(note)+'</span></li>').join('')+'</ul>').join('');
+  tooltip.innerHTML = '<strong id="metric-tooltip-title">'+escapeHtml(title)+'</strong><p>'+escapeHtml(description)+'</p>'+
+    references.map(({name,source,bands})=>{
+      const label = escapeHtml(name ? name+' · '+source.label : source.label);
+      const sourceLink = source.href ? '<a href="'+escapeHtml(source.href)+'" target="_blank" rel="noopener">'+
+        label+' <span aria-hidden="true">↗</span></a>' : label;
+      return '<span class="range-label">'+sourceLink+'</span>'+
+        '<ul class="range-list">'+bands.map(({tone,range,note})=>'<li class="'+tone+'"><b>'+escapeHtml(range)+
+          '</b><span>'+escapeHtml(note)+'</span></li>').join('')+'</ul>';
+    }).join('');
+  (trigger.closest('h2') ?? trigger).after(tooltip);
   activeTrigger = trigger;
-  trigger.setAttribute('aria-describedby',tooltip.id);
+  trigger.setAttribute('aria-describedby','metric-tooltip-title');
+  trigger.setAttribute('aria-expanded','true');
   tooltip.hidden = false;
   positionTooltip();
 }
 function scheduleClose() {
   clearTimeout(closeTimer);
-  if (!pinned && !activeTrigger?.matches(':focus-visible')) closeTimer = setTimeout(hideTooltip,140);
+  if (!pinned && !activeTrigger?.matches(':focus-visible') && !tooltip.contains(document.activeElement)) {
+    closeTimer = setTimeout(hideTooltip,140);
+  }
 }
 for (const trigger of document.querySelectorAll('.info-trigger')) {
   trigger.addEventListener('pointerenter',event=>{
-    if (event.pointerType!=='touch' && !pinned) showTooltip(trigger);
+    if (event.pointerType!=='touch' && !pinned && !tooltip.contains(document.activeElement)) showTooltip(trigger);
   });
   trigger.addEventListener('pointerleave',()=>{
     if (activeTrigger===trigger) scheduleClose();
   });
   trigger.addEventListener('focus',()=>showTooltip(trigger));
-  trigger.addEventListener('blur',()=>{
-    if (activeTrigger===trigger) hideTooltip();
+  trigger.addEventListener('blur',event=>{
+    if (activeTrigger===trigger && !tooltip.contains(event.relatedTarget) && !(pinned && !event.relatedTarget)) {
+      hideTooltip();
+    }
   });
   trigger.addEventListener('click',()=>{
     if (activeTrigger===trigger && pinned) hideTooltip();
@@ -387,11 +414,22 @@ for (const trigger of document.querySelectorAll('.info-trigger')) {
 }
 tooltip.addEventListener('pointerenter',()=>clearTimeout(closeTimer));
 tooltip.addEventListener('pointerleave',scheduleClose);
+tooltip.addEventListener('pointerdown',()=>{
+  clearTimeout(closeTimer);
+  pinned = true;
+});
+tooltip.addEventListener('focusin',()=>clearTimeout(closeTimer));
+tooltip.addEventListener('focusout',event=>{
+  if (event.relatedTarget!==activeTrigger && !tooltip.contains(event.relatedTarget)) hideTooltip();
+});
 document.addEventListener('click',event=>{
   if (!event.target.closest('.info-trigger, .metric-tooltip')) hideTooltip();
 });
 document.addEventListener('keydown',event=>{
-  if (event.key==='Escape') hideTooltip();
+  if (event.key==='Escape') {
+    if (tooltip.contains(document.activeElement)) activeTrigger?.focus();
+    hideTooltip();
+  }
 });
 window.addEventListener('resize',positionTooltip);
 window.addEventListener('scroll',positionTooltip,{passive:true});

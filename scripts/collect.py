@@ -234,17 +234,35 @@ def coverage_targets(repo, manifest, reports):
 
     config = tomllib.loads(manifest)["tool"]
     thresholds = config.get(repo, {}).get("coverage", {})
-    targets = {
-        "coverage": thresholds.get("cpp_lines_min"),
-        "python": (thresholds.get("python_surface_min") if repo == "crysta"
-                   else config.get("coverage", {}).get("report", {}).get("fail_under")),
+    sources = {
+        "coverage": (f"tool.{repo}.coverage", "cpp_lines_min", thresholds),
+        "python": (
+            ("tool.crysta.coverage", "python_surface_min", thresholds) if repo == "crysta"
+            else ("tool.coverage.report", "fail_under", config.get("coverage", {}).get("report", {}))
+        ),
     }
-    for key, report in reports.items():
-        if type(targets[key]) in (int, float):
-            report["target"] = targets[key]
+    settings = {}
+    for metric, (table, key, values) in sources.items():
+        target = values.get(key)
+        if type(target) not in (int, float):
+            continue
+        settings[metric] = {"target": target}
+        if metric in reports:
+            reports[metric]["target"] = target
+        section = ""
+        lines = []
+        for number, raw in enumerate(manifest.splitlines(), 1):
+            line = raw.partition("#")[0].strip()
+            if line.startswith("["):
+                section = line
+            if section == f"[{table}]" and line.partition("=")[0].strip() == key:
+                lines.append(number)
+        if len(lines) == 1:
+            settings[metric]["line"] = lines[0]
+    return settings
 
 
-def coverage_results(repo, sha, root):
+def coverage_results(repo, sha):
     run = workflow_run(repo, sha, "coverage.yml", "workflow_dispatch")
     if not run:
         return {}
@@ -268,10 +286,7 @@ def coverage_results(repo, sha, root):
         if any(a["name"] == "unit-coverage" and not a["expired"] for a in artifacts["artifacts"]):
             capture("gh", "run", "download", str(run["databaseId"]), "--repo", f"enhantica/{repo}",
                     "--name", "unit-coverage", "--dir", temporary)
-            reports = parse_coverage(repo, Path(temporary))
-            if reports:
-                coverage_targets(repo, capture("git", "show", f"{sha}:pyproject.toml", cwd=root), reports)
-            receipt.update(reports)
+            receipt.update(parse_coverage(repo, Path(temporary)))
     return receipt
 
 
@@ -296,11 +311,14 @@ def merge_edi_measurements(sample, receipt, root):
     checks = {name: receipt["checks"][name] for name in ("Clang static analysis", "Ruff")}
     if any(value not in {"Passed", "Failed", "No report"} for value in checks.values()):
         raise ValueError("Invalid check status in the edi measurement receipt")
-    coverage_targets("edi", capture("git", "show", f"{sample['sha']}:pyproject.toml", cwd=root), reports)
+    for key, report in reports.items():
+        if setting := sample["coverage_settings"].get(key):
+            report["target"] = setting["target"]
     sample.update(reports)
     sample["checks"] = sample.get("checks", {}) | checks
     sample["checks_scope"] = {"Clang static analysis": "Linux core, CLI, and bindings compilation database"}
     sample["coverage_url"] = f"https://github.com/enhantica/quality/actions/runs/{receipt['run_id']}"
+    sample["checks_url"] = sample["coverage_url"]
 
 
 def collect(repo, root, bca, docs, from_github):
@@ -331,7 +349,11 @@ def collect(repo, root, bca, docs, from_github):
         sample["docs"] = doxygen_counts(root, HEADERS[repo])
     if from_github:
         sample["checks"], sample["ci_url"] = test_results(repo, sha)
-        sample.update(coverage_results(repo, sha, root))
+        sample.update(coverage_results(repo, sha))
+    manifest = capture("git", "show", f"{sha}:pyproject.toml", cwd=root)
+    sample["coverage_settings"] = coverage_targets(
+        repo, manifest, {key: sample[key] for key in ("coverage", "python") if key in sample},
+    )
     return sample
 
 
