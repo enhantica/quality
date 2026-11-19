@@ -47,6 +47,14 @@ def capture(*command, cwd=None):
     return subprocess.check_output(command, cwd=cwd, text=True)
 
 
+def run_analyzer(tool, *arguments, cwd, input_text=None):
+    # The dashboard workflow is public. Analyzer diagnostics can quote private source.
+    result = subprocess.run([tool, *arguments], cwd=cwd, input=input_text, text=True,
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+    if result.returncode:
+        raise RuntimeError(f"{Path(tool).name} failed with exit code {result.returncode}")
+
+
 def walk(space):
     yield space
     for child in space["spaces"]:
@@ -104,7 +112,7 @@ GENERATE_LATEX = NO
 GENERATE_XML = YES
 QUIET = YES
 '''
-        subprocess.run(["doxygen", "-"], cwd=root, input=config, text=True, check=True)
+        run_analyzer("doxygen", "-", cwd=root, input_text=config)
         index = ET.parse(output / "xml" / "index.xml")
         symbols = {}
         for element in index.findall("compound"):
@@ -134,7 +142,10 @@ QUIET = YES
 def python_docs(root, files):
     symbols = []
     for file in files:
-        tree = ast.parse((root / file).read_text(encoding="utf-8"))
+        try:
+            tree = ast.parse((root / file).read_text(encoding="utf-8"))
+        except SyntaxError:
+            raise ValueError("Could not parse a Python source file for docstring metrics") from None
         symbols.append(tree)
         for node in tree.body:
             if isinstance(node, (ast.AsyncFunctionDef, ast.FunctionDef, ast.ClassDef)) and not node.name.startswith("_"):
@@ -222,7 +233,7 @@ def collect(repo, root, bca, docs, from_github):
         raise ValueError(f"{repo} production scope differs from {sha}")
     with TemporaryDirectory() as temporary:
         report = Path(temporary) / "reports.json"
-        subprocess.run([bca, "metrics", *scope, "-O", "json", "--output", report], cwd=root, check=True)
+        run_analyzer(bca, "metrics", *scope, "-O", "json", "--output", report, cwd=root)
         files = [record for record in json.loads(report.read_text()) if record["name"] in tracked]
     missing = tracked - {record["name"] for record in files}
     if missing:
