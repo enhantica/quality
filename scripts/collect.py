@@ -229,6 +229,21 @@ def parse_coverage(repo, directory):
     return results
 
 
+def coverage_targets(repo, manifest, reports):
+    import tomllib
+
+    config = tomllib.loads(manifest)["tool"]
+    thresholds = config.get(repo, {}).get("coverage", {})
+    targets = {
+        "coverage": thresholds.get("cpp_lines_min"),
+        "python": (thresholds.get("python_surface_min") if repo == "crysta"
+                   else config.get("coverage", {}).get("report", {}).get("fail_under")),
+    }
+    for key, report in reports.items():
+        if type(targets[key]) in (int, float):
+            report["target"] = targets[key]
+
+
 def coverage_results(repo, sha, root):
     run = workflow_run(repo, sha, "coverage.yml", "workflow_dispatch")
     if not run:
@@ -253,22 +268,39 @@ def coverage_results(repo, sha, root):
         if any(a["name"] == "unit-coverage" and not a["expired"] for a in artifacts["artifacts"]):
             capture("gh", "run", "download", str(run["databaseId"]), "--repo", f"enhantica/{repo}",
                     "--name", "unit-coverage", "--dir", temporary)
-            import tomllib
-
             reports = parse_coverage(repo, Path(temporary))
             if reports:
-                config = tomllib.loads(capture("git", "show", f"{sha}:pyproject.toml", cwd=root))["tool"]
-                thresholds = config.get(repo, {}).get("coverage", {})
-                targets = {
-                    "coverage": thresholds.get("cpp_lines_min"),
-                    "python": (thresholds.get("python_surface_min") if repo == "crysta"
-                               else config.get("coverage", {}).get("report", {}).get("fail_under")),
-                }
-                for key, report in reports.items():
-                    if type(targets[key]) in (int, float):
-                        report["target"] = targets[key]
+                coverage_targets(repo, capture("git", "show", f"{sha}:pyproject.toml", cwd=root), reports)
             receipt.update(reports)
     return receipt
+
+
+def merge_edi_measurements(sample, receipt, root):
+    if not receipt or receipt["repo"] != "edi" or receipt["sha"] != sample["sha"]:
+        return
+
+    import tomllib
+
+    manifest = capture("git", "show", f"{sample['sha']}:pixi.toml", cwd=root)
+    expected_sdk = tomllib.loads(manifest)["activation"]["env"]["CRYSTA_COMMIT"]
+    if receipt["sdk_sha"] != expected_sdk or type(receipt["run_id"]) is not int or receipt["run_id"] < 1:
+        raise ValueError("The coverage receipt does not match edi's declared SDK or workflow run")
+
+    reports = {}
+    for key in ("coverage", "python"):
+        covered, total = (receipt[key][field] for field in ("covered", "total"))
+        if type(total) is not int or type(covered) is not int or not 0 <= covered <= total or total == 0:
+            raise ValueError("Invalid coverage counts in the edi measurement receipt")
+        reports[key] = {"covered": covered, "total": total}
+
+    checks = {name: receipt["checks"][name] for name in ("Clang static analysis", "Ruff")}
+    if any(value not in {"Passed", "Failed", "No report"} for value in checks.values()):
+        raise ValueError("Invalid check status in the edi measurement receipt")
+    coverage_targets("edi", capture("git", "show", f"{sample['sha']}:pyproject.toml", cwd=root), reports)
+    sample.update(reports)
+    sample["checks"] = sample.get("checks", {}) | checks
+    sample["checks_scope"] = {"Clang static analysis": "Linux core, CLI, and bindings compilation database"}
+    sample["coverage_url"] = f"https://github.com/enhantica/quality/actions/runs/{receipt['run_id']}"
 
 
 def collect(repo, root, bca, docs, from_github):
@@ -311,15 +343,20 @@ def main():
     parser.add_argument("--docs", action="store_true")
     parser.add_argument("--github", action="store_true")
     parser.add_argument("--history", type=Path)
+    parser.add_argument("--edi-measurements", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     prev = json.loads(args.history.read_text()) if args.history and args.history.exists() else {}
+    edi_measurements = (json.loads(args.edi_measurements.read_text())
+                        if args.edi_measurements and args.edi_measurements.exists() else None)
     data = {"schema": 1, "demo": False, "projects": {}}
     with ThreadPoolExecutor() as pool:
         jobs = {repo: pool.submit(collect, repo, getattr(args, repo).resolve(), args.bca, args.docs, args.github)
                 for repo in SCOPES}
         for repo, job in jobs.items():
             sample = job.result()
+            if repo == "edi":
+                merge_edi_measurements(sample, edi_measurements, args.edi.resolve())
             history = prev.get("projects", {}).get(repo, {}).get("samples", []) if prev.get("schema") == 1 else []
             history = [row for row in history if row["sha"] != sample["sha"]]
             data["projects"][repo] = {"branch": "main", "samples": (history + [sample])[-90:]}

@@ -147,8 +147,9 @@ function density(project, language, report) {
 function analyzer(sample, language) {
   const tool = analysisByLanguage[language];
   const result = sample.checks?.[tool];
+  const detail = sample.checks_scope?.[tool] ? tool+' · '+sample.checks_scope[tool] : tool;
   const statuses = {Clean:'pass',Passed:'pass',Failed:'fail',Partial:'review',Skipped:'missing',Cancelled:'missing'};
-  return Object.hasOwn(statuses,result) ? color(result,statuses[result],tool) : color(null,'missing',tool);
+  return Object.hasOwn(statuses,result) ? color(result,statuses[result],detail) : color(null,'missing',detail);
 }
 function coverage(sample, key) {
   const report = sample[key];

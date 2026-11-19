@@ -38,3 +38,9 @@ python3 scripts/render.py --data /tmp/quality.json --trends --output dist/trends
 Green marks a passed check or a value within its target or advisory reference. Amber flags a value for review. Red identifies a failed check. Blue marks measured counts and other values without targets. Gray marks unavailable results.
 
 Function P90 references are presentation defaults and do not change product CI gates. The dashboard starts with McCabe complexity at 12 for C++ and 10 for Python, cognitive complexity at 15, function length at 50 physical lines, arguments at 5, and explicit exits at 8. The median file MI uses the Visual Studio green boundary of 20. Functions per file is a measured ratio, with a review signal for an increase above 10% from the previous sample. Test coverage keeps each producer's declared target.
+
+### edi measurement workflow
+
+Run **edi coverage and static checks** to refresh edi's coverage and code-quality results. It uses one standard Linux runner and the exact crysta pin in edi's lock. The SDK, source checkout, and compiler logs stay on the runner. The workflow publishes only coverage counts and check outcomes, and a successful run refreshes Pages.
+
+The C++ figure uses edi's instrumented core unit tier. Python uses the unit tier's statement coverage and requires a completed JUnit report with no failed tests. The Linux clang-tidy result covers the core, CLI, and bindings compilation database. Ruff uses edi's existing style task. The collector accepts this receipt only for the exact edi commit it is displaying.

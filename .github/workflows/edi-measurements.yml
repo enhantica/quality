@@ -1,0 +1,63 @@
+name: edi coverage and static checks
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-edi-measurements
+  cancel-in-progress: false
+
+jobs:
+  measure:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v5
+        with:
+          repository: enhantica/edi
+          ref: main
+          path: inputs/edi
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Read the locked crysta commit
+        id: pin
+        working-directory: inputs/edi
+        run: bash tools/ci/crysta-source.sh
+      - name: Authorize the private checkout
+        id: source-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.QUALITY_APP_ID || vars.ENHANTICA_APP_ID }}
+          private-key: ${{ secrets.QUALITY_APP_KEY || secrets.ENHANTICA_APP_KEY }}
+          owner: enhantica
+          repositories: crysta
+          permission-contents: read
+      - uses: actions/checkout@v5
+        with:
+          repository: enhantica/crysta
+          ref: ${{ steps.pin.outputs.sha }}
+          path: inputs/crysta
+          token: ${{ steps.source-token.outputs.token }}
+          persist-credentials: false
+      - uses: ./inputs/edi/.github/actions/setup-pixi
+        with:
+          manifest-path: inputs/edi/pixi.toml
+          environments: default
+          cache: false
+      - name: Run source-safe Linux measurements
+        env:
+          CRYSTA_PIN: ${{ steps.pin.outputs.sha }}
+        run: python3 -u scripts/edi_measure.py
+      - name: Retain only normalized measurements
+        uses: actions/upload-artifact@v4
+        with:
+          name: edi-measurements
+          path: measurement/edi.json
+          if-no-files-found: error
