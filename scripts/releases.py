@@ -7,6 +7,8 @@ from pathlib import Path
 import re
 import subprocess
 
+from collect import crysta_pin
+
 QUERY = """
 query($name: String!, $endCursor: String) {
   repository(owner: "enhantica", name: $name) {
@@ -62,7 +64,13 @@ def main():
     prior = json.loads(args.history.read_text())
     catalogue = {"edi": published_releases("edi")}
     args.output.write_text(json.dumps(catalogue) + "\n", encoding="utf-8")
-    changed = release_changed(catalogue, prior)
+    manifest = subprocess.check_output(
+        ["gh", "api", "-H", "Accept: application/vnd.github.raw+json", "repos/enhantica/edi/contents/pixi.toml?ref=main"],
+        text=True,
+    )
+    main = prior.get("projects", {}).get("edi", {}).get("samples", [])
+    previous_pin = main[-1].get("crysta_pin") if main else None
+    changed = release_changed(catalogue, prior) or crysta_pin(manifest) != previous_pin
     if output := os.environ.get("GITHUB_OUTPUT"):
         with open(output, "a", encoding="utf-8") as stream:
             print(f"changed={str(changed).lower()}", file=stream)

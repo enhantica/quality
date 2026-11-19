@@ -13,7 +13,7 @@ python3 scripts/render.py --trends --output dist/trends.html
 
 ## Collection and publishing
 
-The dashboard refreshes daily at 08:25 Stockholm time, on pushes to this repo’s main branch, and on dispatch. At 25 minutes past each other hour it checks for new published edi releases and refreshes when it finds one. The edi measurement workflow runs daily at 07:15 and also triggers a dashboard refresh after a successful run. Enable GitHub Actions as the Pages source. Until live publication is enabled, deploys contain only the demo.
+The dashboard refreshes daily at 08:25 Stockholm time, on pushes to this repo’s main branch, and on dispatch. At 25 minutes past each other hour it looks for a new edi release or a changed edi main SDK pin. The edi measurement workflow runs daily at 07:15 and also triggers a dashboard refresh after a successful run. Enable GitHub Actions as the Pages source. Until live publication is enabled, deploys contain only the demo.
 
 The collector requests read access to Actions and Contents for both product repositories. It uses the existing Enhantica app configuration by default. The repository variable `QUALITY_APP_ID` and secret `QUALITY_APP_KEY` can point it to a different app.
 
@@ -60,3 +60,9 @@ The dashboard marks increases of at most 10% from the previous ratio as green an
 Run **edi coverage and static checks** to refresh edi's coverage and code-quality results. It uses one standard Linux runner and the exact crysta pin in edi's lock. The SDK, source checkout, and compiler logs stay on the runner. The workflow publishes only coverage counts and check outcomes, and a successful run refreshes Pages.
 
 The C++ figure uses edi's instrumented core unit tier. Python uses the unit tier's statement coverage and requires a completed JUnit report with no failed tests. The Linux clang-tidy result covers the core, CLI, and bindings compilation database. Ruff uses edi's existing style task. The collector accepts this receipt only for the exact edi commit it is displaying.
+
+### crysta SDK measurement workflow
+
+The dashboard queues **crysta SDK measurements** for newly observed pins and for the active edi main and latest release pins when their recorded checks or coverage are incomplete. A completed receipt triggers a dashboard refresh. An Actions dispatch can also measure any full crysta SHA already recorded as a pin in edi's snapshot history.
+
+The workflow uses the pinned crysta commit's Linux clang-tidy, Ruff lint and format, LLVM C++ unit coverage, and narrow Python public API coverage tasks. Its private checkout, test output, and compiler logs stay on the ephemeral runner. The sole uploaded receipt contains the commit, the run ID, two check outcomes, and available aggregate coverage counts.

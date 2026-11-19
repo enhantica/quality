@@ -10,7 +10,7 @@ on:
         type: boolean
         default: false
   workflow_run:
-    workflows: [edi coverage and static checks]
+    workflows: [edi coverage and static checks, crysta SDK measurements]
     types: [completed]
     branches: [main]
   schedule:
@@ -61,7 +61,7 @@ jobs:
           ref: metrics-history
           path: history
           persist-credentials: false
-      - name: Discover published releases
+      - name: Discover published releases and changed SDK pins
         if: env.COLLECT_METRICS == 'true'
         id: releases
         env:
@@ -131,6 +131,13 @@ jobs:
               gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name edi-measurements --dir history
             fi
           fi
+      - name: Read pinned crysta aggregate reports
+        if: env.COLLECT_METRICS == 'true' && steps.plan.outputs.refresh == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 scripts/crysta_sync.py download --repo "$GITHUB_REPOSITORY"
+          --history history/snapshots.json --directory history/crysta
       - name: Collect aggregates for edi and its pinned crysta commits
         if: env.COLLECT_METRICS == 'true' && steps.plan.outputs.refresh == 'true'
         env:
@@ -138,6 +145,7 @@ jobs:
         run: >-
           python3 scripts/collect.py --edi inputs/edi --docs --github
           --history history/snapshots.json --edi-measurements history/edi.json
+          --crysta-measurements history/crysta
           --release-catalogue "$RUNNER_TEMP/releases.json" --output history/snapshots.json
       - name: Render dashboard
         if: steps.plan.outputs.refresh == 'true'
@@ -190,6 +198,29 @@ jobs:
           fi
           git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m "Record metrics from run $GITHUB_RUN_ID"
           git push origin HEAD:refs/heads/metrics-history
+
+  queue-crysta:
+    needs: archive
+    if: github.event.workflow_run.name != 'crysta SDK measurements'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v5
+        with:
+          ref: metrics-history
+          path: history
+          persist-credentials: false
+      - name: Queue measurement of new or incomplete SDK pins
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 scripts/crysta_sync.py queue --repo "$GITHUB_REPOSITORY"
+          --history history/snapshots.json
 
   deploy:
     runs-on: ubuntu-24.04

@@ -300,6 +300,11 @@ def coverage_results(repo, sha):
     return receipt
 
 
+def crysta_pin(manifest):
+    pin = tomllib.loads(manifest).get("activation", {}).get("env", {}).get("CRYSTA_COMMIT")
+    return pin if isinstance(pin, str) and re.fullmatch(r"[0-9a-f]{40}", pin) else None
+
+
 def edi_crysta_pin(sha, root):
     manifest = subprocess.run(
         ["git", "show", f"{sha}:pixi.toml"], cwd=root, text=True,
@@ -307,8 +312,7 @@ def edi_crysta_pin(sha, root):
     )
     if manifest.returncode:
         return None
-    pin = tomllib.loads(manifest.stdout).get("activation", {}).get("env", {}).get("CRYSTA_COMMIT")
-    return pin if isinstance(pin, str) and re.fullmatch(r"[0-9a-f]{40}", pin) else None
+    return crysta_pin(manifest.stdout)
 
 
 def merge_edi_measurements(sample, receipt):
@@ -397,6 +401,46 @@ def exact_evidence(sample, previous):
                 sample[key] = previous[key]
 
 
+def merge_crysta_measurements(sample, receipt):
+    if receipt["repo"] != "crysta" or receipt["sha"] != sample["sha"]:
+        raise ValueError("The coverage receipt does not match the selected crysta pin")
+    run_id = receipt["run_id"]
+    if type(run_id) is not int or run_id < 1:
+        raise ValueError("Invalid crysta measurement run")
+    if run_id <= sample.get("measurement_run", 0):
+        return
+
+    reports = {}
+    for key in ("coverage", "python"):
+        if key not in receipt:
+            continue
+        covered, total = (receipt[key][field] for field in ("covered", "total"))
+        if type(total) is not int or type(covered) is not int or not 0 <= covered <= total or total == 0:
+            raise ValueError("Invalid crysta coverage counts")
+        reports[key] = {"covered": covered, "total": total}
+        if setting := sample.get("coverage_settings", {}).get(key):
+            reports[key]["target"] = setting["target"]
+    checks = {name: receipt["checks"][name] for name in ("Clang static analysis", "Ruff")}
+    if any(value not in {"Passed", "Failed"} for value in checks.values()):
+        raise ValueError("Invalid crysta analyzer outcome")
+
+    url = f"https://github.com/enhantica/quality/actions/runs/{run_id}"
+    sample.update(reports, measurement_run=run_id, checks_url=url)
+    sample["checks"] = sample.get("checks", {}) | checks
+    sample["checks_scope"] = {
+        "Clang static analysis": "Pinned SDK's Linux clang-tidy task",
+        "Ruff": "Pinned SDK's Ruff lint and format checks",
+    }
+    if reports:
+        sample["coverage_url"] = url
+
+
+def complete_crysta_measurements(sample):
+    return all(sample.get(key, {}).get("total") for key in ("coverage", "python")) and all(
+        sample.get("checks", {}).get(name) in {"Passed", "Failed"} for name in ("Clang static analysis", "Ruff")
+    )
+
+
 def fetch_commits(repo, commits, root, local_source=None):
     if any(not re.fullmatch(r"[0-9a-f]{40}", sha) for sha in commits):
         raise ValueError(f"Invalid {repo} commit in the dashboard plan")
@@ -482,7 +526,7 @@ def collect_edi(root, previous, catalogue, edi_measurements, bca, docs, from_git
     }
 
 
-def collect_crysta_pins(edi, previous, local_source, bca, docs, from_github):
+def collect_crysta_pins(edi, previous, local_source, bca, docs, from_github, receipts):
     releases = [row["sample"] for row in edi["releases"]]
     pins = {row["crysta_pin"] for row in [*edi["samples"], *releases] if row.get("crysta_pin")}
     known = {row["sha"]: row["sample"] for row in previous.get("releases", [])}
@@ -508,6 +552,13 @@ def collect_crysta_pins(edi, previous, local_source, bca, docs, from_github):
             update.update(checks=checks, ci_url=url)
         exact_evidence(update, previous_sample)
         known[latest_pin] = previous_sample | update
+    for receipt in receipts:
+        if receipt["sha"] in pins:
+            merge_crysta_measurements(known[receipt["sha"]], receipt)
+    requested = set(previous.get("pending_measurements", [])) | (pins - previous.get("pins", {}).keys())
+    requested.add(latest_pin)
+    if releases:
+        requested.add(releases[-1].get("crysta_pin"))
     return {
         "branch": "edi SDK",
         "samples": [
@@ -515,6 +566,7 @@ def collect_crysta_pins(edi, previous, local_source, bca, docs, from_github):
             for row in edi["samples"]
         ],
         "pins": {sha: known[sha] for sha in sorted(pins)},
+        "pending_measurements": sorted(sha for sha in pins & requested if not complete_crysta_measurements(known[sha])),
     }
 
 
@@ -527,6 +579,7 @@ def main():
     parser.add_argument("--github", action="store_true")
     parser.add_argument("--history", type=Path)
     parser.add_argument("--edi-measurements", type=Path)
+    parser.add_argument("--crysta-measurements", type=Path, help="Directory of normalized SDK receipts")
     parser.add_argument("--release-catalogue", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
@@ -534,6 +587,9 @@ def main():
     edi_measurements = (json.loads(args.edi_measurements.read_text())
                         if args.edi_measurements and args.edi_measurements.exists() else None)
     catalogue = json.loads(args.release_catalogue.read_text()) if args.release_catalogue else {}
+    receipts = [
+        json.loads(path.read_text()) for path in sorted(args.crysta_measurements.glob("*/crysta.json"))
+    ] if args.crysta_measurements else []
     previous = prev.get("projects", {}) if prev.get("schema") == 1 else {}
     edi = collect_edi(
         args.edi.resolve(), previous.get("edi", {}), catalogue.get("edi", []),
@@ -541,7 +597,7 @@ def main():
     )
     crysta = collect_crysta_pins(
         edi, previous.get("crysta", {}), args.crysta.resolve() if args.crysta else None,
-        args.bca, args.docs, args.github,
+        args.bca, args.docs, args.github, receipts,
     )
     data = {"schema": 1, "demo": False, "projects": {"crysta": crysta, "edi": edi}}
     args.output.parent.mkdir(parents=True, exist_ok=True)
