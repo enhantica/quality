@@ -1,6 +1,6 @@
 # Enhantica code quality
 
-A main-branch dashboard for crysta and edi. The default view compares the two projects on metric cards. Choose C++, Python, or Both for source metrics. The coverage cards keep their explicit scope and the trend view includes detailed component data.
+A main-branch dashboard for crysta and edi. Each overview card compares C++ and Python side by side. Card accents group verification, maintainability, function structure, and code size. The trend view includes detailed component data.
 
 ## Preview
 
@@ -21,7 +21,7 @@ Run the workflow manually with `collect_only=true` to download the `quality-dash
 
 The workflow checks out each project's own main commit. BCA reads the declared production C++ and Python source roots. Metrics include physical code lines, logical lines, file and function counts, median file Visual Studio MI for files with measured Halstead volume, documentation lines, and nearest-rank 90th percentiles across functions for cyclomatic complexity, cognitive complexity, physical code lines, arguments, and exits. Reports contain aggregates and public edi function links. The crysta report omits function names and source paths. The analyzers suppress diagnostics that could quote source in Actions logs.
 
-Doxygen counts the documented declarations it extracts from public headers, excluding private members and the `detail` namespace. Python docstring coverage counts handwritten modules, public classes, and their public functions and methods. Compiled Python bindings have a separate API test coverage card for crysta.
+Doxygen counts the documented declarations it extracts from public headers, excluding private members and the `detail` namespace. Python docstring coverage counts handwritten modules, public classes, and their public functions and methods. The API documentation card shows those percentages alongside BCA's count of documentation lines across the measured source. The test coverage card includes crysta's compiled Python binding coverage, measured over public API entries.
 
 Clang, sanitizer and docs results come from completed push runs for the measured commit. Unit test coverage uses the existing `unit-coverage` artifact from a coverage dispatch on main at that same commit. The dashboard also accepts a verified artifact when both coverage steps and its upload passed before a later workflow step failed. Missing runs and expired artifacts leave a metric unmeasured. The workflow retains only normalized dashboard data and reuses it for history. It does not dispatch coverage jobs or publish source, logs, or raw analysis reports.
 

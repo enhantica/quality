@@ -3,34 +3,32 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="dark">
+<meta name="color-scheme" content="light">
 <title>Enhantica · Code quality</title>
 <style>
 :root {
-  color-scheme:dark;
-  --font-title:28px;--font-metric:16px;--font-meta:12px;
-  --page:#252525; --card:#1b1b1b; --cap:#202020; --line:#393939;
-  --strong:#e0e0e0; --text:#ccc; --muted:#aaa;
-  --pass:#89c65b; --review:#f6ab43; --fail:#ef8881; --missing:#999; --info:#8dbce8;
+  color-scheme:light;
+  --font-metric:16px;--font-meta:12px;
+  --page:#f5f6f8; --card:#fff; --line:#dee3e9;
+  --text:#202936; --muted:#566373;
+  --pass:#236b41; --review:#8b560b; --fail:#ad3838; --missing:#667184; --info:#245d9c;
+  --verification:#a18bc5; --maintainability:#6f9f9e; --functions:#bd8eae; --size:#8391a5;
 }
 * {box-sizing:border-box}
 body {margin:0;background:var(--page);color:var(--text);font:var(--font-metric)/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-main {width:min(100%,1480px);margin:auto;padding:26px clamp(15px,3.5vw,42px) 24px}
-.intro, .scope {display:flex;align-items:center;justify-content:space-between;gap:12px}
-.intro {margin-bottom:22px}
-h1 {font-size:var(--font-title);line-height:1.1;font-weight:600;letter-spacing:-.036em;margin:0 0 4px;color:var(--strong)}
-.context, .scope {font-size:var(--font-meta);color:var(--muted)}
-nav {display:flex;gap:2px;border:1px solid #454545;border-radius:6px;padding:3px}
-nav a {padding:5px 10px;border-radius:3px;text-decoration:none;white-space:nowrap;color:var(--muted)}
-nav a[aria-current=page] {background:#3c3c3c;color:#f3f3f3}
-a {color:var(--text)}
-a:hover {color:#fff}
-a:focus-visible {outline:2px solid var(--review);outline-offset:2px}
-.grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
-.card {border:1px solid #151515;border-radius:7px;background:var(--card);min-width:0}
-.card h2 {display:flex;align-items:center;gap:10px;margin:0;padding:14px 15px;border-radius:6px 6px 0 0;background:var(--cap);border-bottom:1px solid #151515;font-size:var(--font-metric);font-weight:500;letter-spacing:-.02em;line-height:1.25;min-height:50px}
+main {width:min(100%,1480px);margin:auto;padding:22px clamp(15px,3.5vw,42px) 24px}
+a {color:var(--info);text-underline-offset:2px}
+a:hover {color:var(--text)}
+a:focus-visible {outline:2px solid var(--info);outline-offset:2px}
+.grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.card {border:1px solid var(--line);border-inline-start:3px solid var(--accent);border-radius:8px;background:var(--card);min-width:0}
+.card[data-group="verification"] {--accent:var(--verification)}
+.card[data-group="maintainability"] {--accent:var(--maintainability)}
+.card[data-group="functions"] {--accent:var(--functions)}
+.card[data-group="size"] {--accent:var(--size)}
+.card h2 {display:flex;align-items:center;gap:9px;margin:0;padding:12px 14px;border-bottom:1px solid var(--line);font-size:var(--font-metric);font-weight:600;letter-spacing:-.02em;line-height:1.25;min-height:46px}
 .hint {margin-left:auto;font-size:var(--font-meta);color:var(--muted);letter-spacing:0;white-space:nowrap}
-.icon {position:relative;display:block;width:22px;height:22px;flex:none;color:#c4c4c4}
+.icon {position:relative;display:block;width:22px;height:22px;flex:none;color:var(--muted)}
 .icon::before, .icon::after {content:"";position:absolute}
 .icon-quality::before {inset:1px;border:2px solid currentColor;border-radius:50%}
 .icon-quality::after {width:2px;height:8px;top:4px;left:10px;border-radius:2px;background:currentColor;transform:rotate(35deg);transform-origin:center bottom}
@@ -38,9 +36,9 @@ a:focus-visible {outline:2px solid var(--review);outline-offset:2px}
 .icon-size::after {top:6px;left:7px;width:8px;height:2px;border-radius:1px;background:currentColor;box-shadow:0 4px currentColor,0 8px currentColor}
 .icon-coverage::before {inset:2px 1px 1px;border:2px solid currentColor;border-radius:3px}
 .icon-coverage::after {inset:5px 5px 5px;background:linear-gradient(currentColor,currentColor) left bottom/2px 5px no-repeat,linear-gradient(currentColor,currentColor) center bottom/2px 10px no-repeat,linear-gradient(currentColor,currentColor) right bottom/2px 7px no-repeat}
-.readings {padding:12px 15px;display:grid;gap:5px}
-.reading, .language-head {display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:center;gap:10px}
-.reading {min-height:30px}
+.readings {padding:9px 14px 11px;display:grid;gap:4px}
+.reading, .language-head {display:grid;grid-template-columns:48px minmax(0,1fr);align-items:center;gap:7px}
+.reading {min-height:28px}
 .values, .language-head > div {display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px}
 .result, .language-head span {min-width:0;text-align:right;line-height:1.2}
 .result {display:flex;align-items:baseline;justify-content:flex-end;gap:3px}
@@ -50,28 +48,20 @@ a:focus-visible {outline:2px solid var(--review);outline-offset:2px}
 .fail {--tone:var(--fail)}
 .missing {--tone:var(--missing)}
 .measured {--tone:var(--info)}
-.project {color:var(--tone,var(--text))}
-.value {font-size:var(--font-metric);color:var(--tone,var(--strong));font-variant-numeric:tabular-nums;white-space:nowrap}
+.value {font-size:var(--font-metric);color:var(--tone,var(--text));font-variant-numeric:tabular-nums;white-space:nowrap}
 .mark {width:12px;flex:none;text-align:center;font-size:var(--font-meta);color:var(--tone,var(--muted))}
 .counts {min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:var(--font-meta);color:var(--muted);white-space:nowrap}
 .counts::before {content:'·';margin-right:4px}
-.is-both .reading, .is-both .language-head {grid-template-columns:52px minmax(0,1fr)}
 .footer {display:flex;justify-content:space-between;align-items:baseline;gap:8px 16px;flex-wrap:wrap;padding-top:15px;color:var(--muted);font-size:var(--font-meta)}
 .legend {display:flex;gap:13px;flex-wrap:wrap;list-style:none;margin:0;padding:0}
 .legend b {color:var(--tone);margin-right:4px;font-weight:600}
 .sr {position:absolute;overflow:hidden;width:1px;height:1px;clip-path:inset(50%);white-space:nowrap}
 @media(max-width:990px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.card h2,.readings{padding-inline:13px}}
-@media(max-width:610px){.intro{align-items:flex-start;flex-direction:column;gap:12px}.grid{grid-template-columns:1fr;gap:12px}main{padding-top:18px}.card h2{min-height:auto}}
+@media(max-width:640px){.grid{grid-template-columns:1fr;gap:12px}main{padding:15px 10px 24px}.readings{padding-inline:11px}}
 </style>
 </head>
 <body>
 <main>
-  <header class="intro">
-    <div><h1>Code quality</h1><div class="context" id="context"></div></div>
-    <div class="scope"><span>Source metrics</span><nav aria-label="Source metric language">
-      <a href="#cpp">C++</a><a href="#python">Python</a><a href="#both">Both</a>
-    </nav></div>
-  </header>
   <section class="grid" aria-label="Metric cards for crysta and edi" id="cards"></section>
   <footer class="footer">
     <ul class="legend" aria-label="Result legend">
@@ -81,6 +71,7 @@ a:focus-visible {outline:2px solid var(--review);outline-offset:2px}
       <li class="measured"><b aria-hidden="true">•</b>Measured</li>
       <li class="missing"><b aria-hidden="true">–</b>No report</li>
     </ul>
+    <span id="demo-label" hidden>Demo data</span>
     <a href="trends.html">Trends and components ↗</a>
   </footer>
 </main>
@@ -90,8 +81,11 @@ a:focus-visible {outline:2px solid var(--review);outline-offset:2px}
 const data = JSON.parse(document.querySelector('#dashboard-data').textContent);
 const projects = ['crysta','edi'];
 const labels = {cpp:'C++',python:'Python'};
+const languages = Object.keys(labels);
 const metricsByLanguage = {cpp:'static',python:'python_static'};
 const analysisByLanguage = {cpp:'Clang static analysis',python:'Ruff'};
+const coverageByLanguage = {cpp:'coverage',python:'python'};
+const docsByLanguage = {cpp:'docs',python:'python_docs'};
 const statusSymbols = {pass:'✓',review:'!',fail:'×',missing:'–'};
 const statusLabels = {pass:'Within target',review:'Review',fail:'Failed',missing:'No report'};
 const format = new Intl.NumberFormat('en', {maximumFractionDigits:1});
@@ -151,33 +145,55 @@ function analyzer(sample, language) {
   const statuses = {Clean:'pass',Passed:'pass',Failed:'fail',Partial:'review',Skipped:'missing',Cancelled:'missing'};
   return Object.hasOwn(statuses,result) ? color(result,statuses[result],detail) : color(null,'missing',detail);
 }
-function coverage(sample, key) {
+function coverage(sample, key, scope) {
   const report = sample[key];
-  if (!(report?.total > 0)) return color(null);
+  if (!(report?.total > 0)) return color(null,'missing',scope);
   const value = report.covered*100/report.total;
   const target = report.target ?? (data.demo ? data.demoTargets?.coverage?.[key] : null);
   const status = Number.isFinite(target) ? (value>=target ? 'pass' : 'review') : 'measured';
   return color(number(value)+'%',status,
-    number(report.covered)+' of '+number(report.total)+(Number.isFinite(target) ? '. Target ≥ '+target+'%' : ''));
+    number(report.covered)+' of '+number(report.total)+' '+scope+
+    (Number.isFinite(target) ? '. Target ≥ '+target+'%' : ''));
 }
-const cards = [
-  {icon:'quality',name:'Code quality',help:'Clang static analysis for C++; Ruff for Python',read:(project,language,sample)=>analyzer(sample,language)},
-  {icon:'quality',name:'Maintainability index',hint:'File median',help:'BCA · file median, Visual Studio MI scale (0–100)',read:(project,language,sample,source)=>maintainability(source)},
-  {icon:'quality',name:'Cyclomatic complexity',percentile:'p90',help:'BCA · 90th percentile of function McCabe scores',read:(project,language,sample,source)=>functionMetric(source,'p90',language)},
-  {icon:'size',name:'Physical code lines',help:'BCA · physical code lines excluding blank and comment-only lines',read:(project,language,sample,source)=>basic(source?.components?.reduce((sum,item)=>sum+item.lines,0))},
-  {icon:'size',name:'Logical lines',help:'BCA · logical lines of code',read:(project,language,sample,source)=>basic(source?.logical)},
-  {icon:'size',name:'Functions / files',help:'Functions per file, with the function and file counts beside it. Amber marks a rise of more than 10% from the previous measured ratio.',read:(project,language,sample,source)=>density(project,language,source)},
-  {icon:'coverage',name:'C++ unit-test coverage',help:'LLVM · instrumented C++ unit tiers',fixed:'coverage'},
-  {icon:'coverage',name:'Python test coverage',help:'crysta public API entries · edi statements in lib/edi',fixed:'python'},
-  {icon:'coverage',name:'C++ API documentation',help:'Doxygen · documented public header symbols',fixed:'docs'},
-  {icon:'quality',name:'Cognitive complexity',percentile:'p90_cognitive',help:'BCA · 90th percentile of function cognitive complexity',read:(project,language,sample,source)=>functionMetric(source,'p90_cognitive',language)},
-  {icon:'size',name:'Function length',percentile:'p90_length',help:'BCA · 90th percentile of physical code lines per function',read:(project,language,sample,source)=>functionMetric(source,'p90_length',language)},
-  {icon:'size',name:'Function arguments',percentile:'p90_arguments',help:'BCA · 90th percentile of arguments per callable as counted by BCA',read:(project,language,sample,source)=>functionMetric(source,'p90_arguments',language)},
-  {icon:'size',name:'Function exits',percentile:'p90_exits',help:'BCA · 90th percentile of explicit exits per function',read:(project,language,sample,source)=>functionMetric(source,'p90_exits',language)},
-  {icon:'coverage',name:'Documentation lines',help:'BCA · total lines in documentation comments and docstrings',read:(project,language,sample,source)=>basic(source?.documentation_lines)},
-];
+function testCoverage(project, language, sample) {
+  const scope = language === 'cpp' ? 'executable C++ lines'
+    : project === 'crysta' ? 'public Python API entries' : 'Python package statements';
+  return coverage(sample,coverageByLanguage[language],scope);
+}
+function documentation(language, sample, source) {
+  const scope = language === 'cpp' ? 'public header declarations' : 'handwritten Python modules, classes and callables';
+  const result = coverage(sample,docsByLanguage[language],scope);
+  const lines = source?.documentation_lines;
+  if (Number.isFinite(lines)) {
+    result.counts = number(lines);
+    result.detail += '. '+result.counts+' documentation lines across measured source (BCA)';
+  }
+  return result;
+}
+const groups = {
+  verification: [
+    {icon:'quality',name:'Static checks',hint:'CI status',columns:{cpp:'C++ · clang-tidy',python:'Python · Ruff'},help:'Static analysis results from CI. The C++ check scope varies by project.',read:(project,language,sample)=>analyzer(sample,language)},
+    {icon:'coverage',name:'Test coverage',hint:'Unit tier',help:'C++ executable lines. Python measures public API entries in crysta and package statements in edi.',read:testCoverage},
+    {icon:'coverage',name:'API documentation',hint:'% · lines',columns:{cpp:'C++ · Doxygen',python:'Python · docstrings'},help:'Percentage of eligible declarations with documentation, followed by documentation lines across measured source.',read:(project,language,sample,source)=>documentation(language,sample,source)},
+  ],
+  maintainability: [
+    {icon:'quality',name:'Maintainability index',hint:'File median',help:'BCA · file median, Visual Studio MI scale (0–100)',read:(project,language,sample,source)=>maintainability(source)},
+    {icon:'quality',name:'Cyclomatic complexity',hint:'P90',percentile:'p90',help:'BCA · 90th percentile of function McCabe scores',read:(project,language,sample,source)=>functionMetric(source,'p90',language)},
+    {icon:'quality',name:'Cognitive complexity',hint:'P90',percentile:'p90_cognitive',help:'BCA · 90th percentile of function cognitive complexity',read:(project,language,sample,source)=>functionMetric(source,'p90_cognitive',language)},
+  ],
+  functions: [
+    {icon:'size',name:'Function length',hint:'P90 · lines',percentile:'p90_length',help:'BCA · 90th percentile of physical code lines per function',read:(project,language,sample,source)=>functionMetric(source,'p90_length',language)},
+    {icon:'size',name:'Function arguments',hint:'P90',percentile:'p90_arguments',help:'BCA · 90th percentile of arguments per callable',read:(project,language,sample,source)=>functionMetric(source,'p90_arguments',language)},
+    {icon:'size',name:'Function exits',hint:'P90',percentile:'p90_exits',help:'BCA · 90th percentile of explicit exits per function',read:(project,language,sample,source)=>functionMetric(source,'p90_exits',language)},
+  ],
+  size: [
+    {icon:'size',name:'Physical code lines',hint:'Code only',help:'BCA · physical code lines excluding blank and comment-only lines',read:(project,language,sample,source)=>basic(source?.components?.reduce((sum,item)=>sum+item.lines,0))},
+    {icon:'size',name:'Logical lines',hint:'Syntax-based',help:'BCA · logical lines of code',read:(project,language,sample,source)=>basic(source?.logical)},
+    {icon:'size',name:'Functions / files',hint:'Ratio · counts',help:'Functions per file, followed by function and file counts. Amber marks a rise of more than 10% from the previous measurement.',read:(project,language,sample,source)=>density(project,language,source)},
+  ],
+};
 function resultCell(result, language) {
-  const label = language ? labels[language]+' ' : '';
+  const label = labels[language]+' ';
   const detail = result.detail ? ' title="'+escapeHtml(result.detail)+'"' : '';
   const extra = ['Clean','Passed','Failed','No report'].includes(result.value) ? '' : statusLabels[result.status];
   return '<span class="result '+result.status+'"'+detail+'>'+
@@ -187,43 +203,27 @@ function resultCell(result, language) {
     (result.counts ? '<span class="counts">'+escapeHtml(result.counts)+'</span>' : '')+
     (extra ? '<span class="sr"> '+extra+'</span>' : '')+'</span>';
 }
-function cardRow(card, project, languages) {
+function cardRow(card, project) {
   const snapshot = currentSnapshot(project);
-  const results = card.fixed
-    ? [coverage(snapshot,card.fixed)]
-    : languages.map(language=>card.read(project,language,snapshot,snapshot[metricsByLanguage[language]]));
-  const multiple = results.length>1;
-  const tone = multiple ? 'neutral' : results[0].status;
-  return '<div class="reading"><span class="project '+tone+'">'+project+'</span><div class="values">'+
-    results.map((result,index)=>resultCell(result,multiple?languages[index]:null)).join('')+'</div></div>';
+  const results = languages.map(language=>
+    resultCell(card.read(project,language,snapshot,snapshot[metricsByLanguage[language]]),language));
+  return '<div class="reading"><span>'+project+'</span><div class="values">'+results.join('')+'</div></div>';
 }
-function render() {
-  const requested = location.hash.slice(1);
-  const active = requested==='both' || requested==='python' ? requested : 'cpp';
-  const languages = active==='both' ? ['cpp','python'] : [active];
-  for (const link of document.querySelectorAll('nav a')) {
-    if (link.hash === '#'+active) link.setAttribute('aria-current','page');
-    else link.removeAttribute('aria-current');
-  }
-  document.querySelector('#context').textContent = 'crysta + edi · main'+(data.demo?' · Demo data':'');
-  document.querySelector('#cards').innerHTML = cards.map(card=>{
-    const both = !card.fixed && languages.length>1;
-    const columnLabel = language => {
-      const target = limitFor(card.percentile, language);
-      return labels[language]+(Number.isFinite(target) ? ' ≤ '+target : '');
-    };
-    const heads = both ? '<div class="language-head" aria-hidden="true"><div></div><div>'+
-      languages.map(language=>'<span>'+columnLabel(language)+'</span>').join('')+'</div></div>' : '';
-    const target = both ? null : limitFor(card.percentile,active);
-    const caption = card.percentile ? 'P90'+(Number.isFinite(target) ? ' ≤ '+target : '') : card.hint;
-    const hint = caption ? '<span class="hint">'+caption+'</span>' : '';
-    return '<article class="card'+(both?' is-both':'')+'" title="'+escapeHtml(card.help)+'"><h2>'+
-      '<span class="icon icon-'+card.icon+'" aria-hidden="true"></span>'+card.name+hint+'</h2>'+
-      '<div class="readings">'+heads+projects.map(project=>cardRow(card,project,languages)).join('')+'</div></article>';
+function renderCard(group, card) {
+  const heads = languages.map(language=>{
+    const target = limitFor(card.percentile,language);
+    const label = card.columns?.[language] ?? (labels[language]+(Number.isFinite(target) ? ' ≤ '+target : ''));
+    return '<span>'+escapeHtml(label)+'</span>';
   }).join('');
+  return '<article class="card" data-group="'+group+'" title="'+escapeHtml(card.help)+'"><h2>'+
+    '<span class="icon icon-'+card.icon+'" aria-hidden="true"></span>'+card.name+
+    '<span class="hint">'+card.hint+'</span></h2><div class="readings">'+
+    '<div class="language-head" aria-hidden="true"><div></div><div>'+heads+'</div></div>'+
+    projects.map(project=>cardRow(card,project)).join('')+'</div></article>';
 }
-window.addEventListener('hashchange',render);
-render();
+document.querySelector('#demo-label').hidden = !data.demo;
+document.querySelector('#cards').innerHTML = Object.entries(groups)
+  .flatMap(([group,cards])=>cards.map(card=>renderCard(group,card))).join('');
 </script>
 </body>
 </html>

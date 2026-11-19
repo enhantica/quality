@@ -41,7 +41,7 @@ def write_summary(data: dict, path: Path) -> None:
                 + (f" · target {target:g}%" if target is not None else ""))
 
     rows = [
-        ("Code quality", lambda s, m, lang: s.get("checks", {}).get(
+        ("Static checks (clang-tidy / Ruff)", lambda s, m, lang: s.get("checks", {}).get(
             "Clang static analysis" if lang == "C++" else "Ruff", "No report")),
         ("Maintainability index (file median)", lambda s, m, lang: formatted(m.get("mi"))),
         ("Cyclomatic complexity (P90)", lambda s, m, lang: formatted(m.get("p90"))),
