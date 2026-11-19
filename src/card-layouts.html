@@ -156,6 +156,11 @@ const cards = [
   {icon:'coverage',name:'C++ unit-test coverage',help:'LLVM · instrumented C++ unit tiers',fixed:'coverage'},
   {icon:'coverage',name:'Python test coverage',help:'crysta public API entries · edi statements in lib/edi',fixed:'python'},
   {icon:'coverage',name:'C++ API documentation',help:'Doxygen · documented public header symbols',fixed:'docs'},
+  {icon:'quality',name:'Cognitive complexity',hint:'P90',help:'BCA · 90th percentile of function cognitive complexity',read:(project,language,sample,source)=>basic(source?.p90_cognitive)},
+  {icon:'size',name:'Function length',hint:'P90',help:'BCA · 90th percentile of physical code lines per function',read:(project,language,sample,source)=>basic(source?.p90_length)},
+  {icon:'size',name:'Function arguments',hint:'P90',help:'BCA · 90th percentile of arguments per callable as counted by BCA',read:(project,language,sample,source)=>basic(source?.p90_arguments)},
+  {icon:'size',name:'Function exits',hint:'P90',help:'BCA · 90th percentile of explicit exits per function',read:(project,language,sample,source)=>basic(source?.p90_exits)},
+  {icon:'coverage',name:'Documentation lines',help:'BCA · total lines in documentation comments and docstrings',read:(project,language,sample,source)=>basic(source?.documentation_lines)},
 ];
 function resultCell(result, language) {
   const label = language ? labels[language]+' ' : '';

@@ -170,7 +170,12 @@
                 "component": "Engine",
                 "score": 27
               }
-            ]
+            ],
+            "p90_cognitive": 12,
+            "p90_length": 43,
+            "p90_arguments": 5,
+            "p90_exits": 3,
+            "documentation_lines": 2595
           },
           "python": {
             "covered": 291,
@@ -194,7 +199,12 @@
                 "name": "Python bootstrap",
                 "lines": 104
               }
-            ]
+            ],
+            "p90_cognitive": 6,
+            "p90_length": 23,
+            "p90_arguments": 3,
+            "p90_exits": 2,
+            "documentation_lines": 31
           },
           "python_docs": {
             "covered": 2,
@@ -376,7 +386,12 @@
                 "component": "Native CLI",
                 "score": 27
               }
-            ]
+            ],
+            "p90_cognitive": 18,
+            "p90_length": 52,
+            "p90_arguments": 7,
+            "p90_exits": 4,
+            "documentation_lines": 4178
           },
           "python": {
             "covered": 1652,
@@ -400,7 +415,12 @@
                 "name": "Python package",
                 "lines": 1386
               }
-            ]
+            ],
+            "p90_cognitive": 11,
+            "p90_length": 26,
+            "p90_arguments": 4,
+            "p90_exits": 3,
+            "documentation_lines": 188
           },
           "python_docs": {
             "covered": 29,

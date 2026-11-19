@@ -65,7 +65,14 @@ def summarize(records, scope, include_locations):
     components = Counter()
     hotspots = []
     file_scores = []
-    function_count = logical_lines = 0
+    function_count = logical_lines = documentation_lines = 0
+    distributions = {
+        "p90": [],
+        "p90_cognitive": [],
+        "p90_length": [],
+        "p90_arguments": [],
+        "p90_exits": [],
+    }
     for file in records:
         name = file["name"]
         component = next(label for path, label in scope.items() if name.startswith(path + "/"))
@@ -73,13 +80,23 @@ def summarize(records, scope, include_locations):
         physical = metrics["loc"]["ploc"]
         components[component] += physical
         logical_lines += metrics["loc"]["lloc"]
+        documentation_lines += metrics["loc"]["dloc"]
         function_count += metrics["nom"]["functions"]
         if physical and metrics["halstead"]["volume"]:
             file_scores.append(metrics["mi"]["visual_studio"])
         for child in walk(file):
             if child["kind"] != "function" or child["metrics"]["nom"]["functions"] < 1:
                 continue
-            row = {"score": child["metrics"]["cyclomatic"]["value"], "component": component}
+            function = child["metrics"]
+            complexity = function["cyclomatic"]["value"]
+            distributions["p90"].append(complexity)
+            distributions["p90_cognitive"].append(function["cognitive"]["value"])
+            distributions["p90_length"].append(function["loc"]["ploc"])
+            distributions["p90_arguments"].append(function["nargs"]["value"])
+            # BCA's exit sum includes nested callable spaces. Those have their own rows.
+            nested_exits = sum(space["metrics"]["nexits"]["sum"] for space in child["spaces"])
+            distributions["p90_exits"].append(function["nexits"]["sum"] - nested_exits)
+            row = {"score": complexity, "component": component}
             if include_locations:
                 row.update(name=child["name"], path=name, line=child["start_line"])
             else:
@@ -88,10 +105,12 @@ def summarize(records, scope, include_locations):
     hotspots.sort(key=lambda row: (-row["score"], row.get("path", ""), row.get("line", 0)))
     return {
         "mi": statistics.median(file_scores) if file_scores else None,
-        "p90": hotspots[len(hotspots)-math.ceil(0.9*len(hotspots))]["score"] if hotspots else None,
+        **{name: sorted(values)[math.ceil(0.9 * len(values)) - 1] if values else None
+           for name, values in distributions.items()},
         "files": len(records),
         "functions": function_count,
         "logical": logical_lines,
+        "documentation_lines": documentation_lines,
         "components": [{"name": name, "lines": value} for name, value in components.most_common()],
         "hotspots": hotspots[:6],
     }
@@ -216,7 +235,18 @@ def coverage_results(repo, sha, root):
         return {}
     receipt = {"coverage_url": run["url"]}
     if run["conclusion"] != "success":
-        return receipt
+        jobs = json.loads(capture("gh", "api", "--paginate", "--slurp",
+                                  f"repos/enhantica/{repo}/actions/runs/{run['databaseId']}/jobs?per_page=100"))
+        required = {
+            "crysta": ("C++ unit coverage, gated", "Python surface coverage, gated",
+                       "Upload the coverage reports + lcov export"),
+            "edi": ("C++ unit coverage", "Python coverage", "Upload both reports"),
+        }[repo]
+        # An unrelated failure after the upload does not invalidate measurements.
+        if not any(all(any(step["name"].startswith(prefix) and step["conclusion"] == "success"
+                           for step in job["steps"]) for prefix in required)
+                   for page in jobs for job in page["jobs"]):
+            return receipt
     with TemporaryDirectory() as temporary:
         artifacts = json.loads(capture("gh", "api",
                                        f"repos/enhantica/{repo}/actions/runs/{run['databaseId']}/artifacts"))
@@ -227,7 +257,7 @@ def coverage_results(repo, sha, root):
 
             reports = parse_coverage(repo, Path(temporary))
             if reports:
-                config = tomllib.loads(capture("git", "show", "HEAD:pyproject.toml", cwd=root))["tool"]
+                config = tomllib.loads(capture("git", "show", f"{sha}:pyproject.toml", cwd=root))["tool"]
                 thresholds = config.get(repo, {}).get("coverage", {})
                 targets = {
                     "coverage": thresholds.get("cpp_lines_min"),

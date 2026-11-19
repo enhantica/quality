@@ -45,6 +45,11 @@ def write_summary(data: dict, path: Path) -> None:
             "Clang static analysis" if lang == "C++" else "Ruff", "No report")),
         ("Maintainability index (file median)", lambda s, m, lang: formatted(m.get("mi"))),
         ("Cyclomatic complexity (P90)", lambda s, m, lang: formatted(m.get("p90"))),
+        ("Cognitive complexity (P90)", lambda s, m, lang: formatted(m.get("p90_cognitive"))),
+        ("Function length (P90 physical lines)", lambda s, m, lang: formatted(m.get("p90_length"))),
+        ("Function arguments (P90)", lambda s, m, lang: formatted(m.get("p90_arguments"))),
+        ("Function exits (P90)", lambda s, m, lang: formatted(m.get("p90_exits"))),
+        ("Documentation lines", lambda s, m, lang: formatted(m.get("documentation_lines"))),
         ("Physical code lines", lambda s, m, lang: formatted(
             sum(row["lines"] for row in m["components"]) if "components" in m else None)),
         ("Logical lines", lambda s, m, lang: formatted(m.get("logical"))),
