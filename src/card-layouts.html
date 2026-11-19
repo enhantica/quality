@@ -19,12 +19,10 @@ body {margin:0;background:var(--page);color:var(--text);font:var(--font-metric)/
 main {width:min(100%,1480px);margin:auto;padding:22px clamp(15px,3.5vw,42px) 24px}
 .page-header {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:0 0 16px}
 .page-header h1 {margin:0;font-size:var(--font-title);font-weight:650;line-height:1.15;letter-spacing:-.035em}
-.snapshot-controls {display:flex;align-items:center;gap:12px;margin-inline-start:auto;max-width:100%}
-.crysta-pin {font-size:var(--font-meta);font-variant-numeric:tabular-nums;white-space:nowrap}
-.snapshot-picker {position:relative;min-width:0;width:clamp(122px,16vw,168px)}
-.snapshot-trigger, .snapshot-option {display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;color:var(--text);font:inherit;font-size:var(--font-meta);text-align:left;cursor:pointer}
+.snapshot-picker {position:relative;width:min(224px,100%);margin-inline-start:auto}
+.snapshot-trigger, .snapshot-option {display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;color:var(--text);font:inherit;font-size:var(--font-meta);font-variant-numeric:tabular-nums;text-align:left;overflow-wrap:anywhere;cursor:pointer}
 .snapshot-trigger {padding:8px 11px;border:1px solid var(--line);border-radius:8px;background:var(--card);font-weight:600}
-.snapshot-trigger::after {content:'';width:6px;height:6px;margin:0 2px 3px 0;border:solid var(--muted);border-width:0 1.5px 1.5px 0;transform:rotate(45deg)}
+.snapshot-trigger::after {content:'';flex:none;width:6px;height:6px;margin:0 2px 3px 0;border:solid var(--muted);border-width:0 1.5px 1.5px 0;transform:rotate(45deg)}
 .snapshot-trigger[aria-expanded="true"]::after {margin-bottom:0;transform:rotate(225deg)}
 .snapshot-trigger:hover {border-color:var(--size)}
 .snapshot-trigger:focus-visible, .snapshot-option:focus-visible {outline:2px solid var(--info);outline-offset:1px}
@@ -97,13 +95,10 @@ a:focus-visible {outline:2px solid var(--info);outline-offset:2px}
 <main>
   <header class="page-header">
     <h1>Code quality</h1>
-    <div class="snapshot-controls">
-      <a class="crysta-pin" id="crysta-pin" target="_blank" rel="noreferrer" hidden></a>
-      <div class="snapshot-picker" id="snapshot-picker">
-        <button class="snapshot-trigger" type="button" id="snapshot-trigger" aria-haspopup="listbox"
-          aria-controls="snapshot-menu" aria-expanded="false">main</button>
-        <div class="snapshot-menu" id="snapshot-menu" role="listbox" aria-label="edi version" hidden></div>
-      </div>
+    <div class="snapshot-picker" id="snapshot-picker">
+      <button class="snapshot-trigger" type="button" id="snapshot-trigger" aria-haspopup="listbox"
+        aria-controls="snapshot-menu" aria-expanded="false">edi main</button>
+      <div class="snapshot-menu" id="snapshot-menu" role="listbox" aria-label="edi snapshot" hidden></div>
     </div>
   </header>
   <section class="grid" aria-label="Metric cards for crysta and edi" id="cards"></section>
@@ -134,11 +129,17 @@ const docsByLanguage = {cpp:'docs',python:'python_docs'};
 const picker = document.querySelector('#snapshot-picker');
 const snapshotTrigger = document.querySelector('#snapshot-trigger');
 const snapshotMenu = document.querySelector('#snapshot-menu');
-const crystaPinLink = document.querySelector('#crysta-pin');
+const mainSnapshot = data.projects.edi.samples.at(-1);
 const releases = data.projects.edi.releases ?? [];
 const newestFirst = releases.slice().reverse();
 const choices = [null,...newestFirst];
 let selectedRelease = newestFirst[0] ?? null;
+
+function snapshotLabel(version, snapshot) {
+  const pin = snapshot?.crysta_pin;
+  const sdk = typeof pin === 'string' && /^[0-9a-f]{40}$/.test(pin) ? ' · crysta '+pin.slice(0,7) : '';
+  return 'edi '+version+sdk;
+}
 
 function snapshotFor(project, ediSnapshot) {
   if (project === 'edi') return ediSnapshot ?? {};
@@ -499,19 +500,8 @@ function renderSnapshot() {
   tooltipContent.length = 0;
   const cards = document.querySelector('#cards');
   const version = selectedRelease?.tag ?? 'main';
-  const ediSnapshot = selectedRelease ? selectedRelease.sample : data.projects.edi.samples.at(-1);
-  const pin = ediSnapshot?.crysta_pin;
-  const hasPin = typeof pin === 'string' && /^[0-9a-f]{40}$/.test(pin);
-  if (hasPin) {
-    crystaPinLink.textContent = 'crysta '+pin.slice(0,7);
-    crystaPinLink.href = 'https://github.com/enhantica/crysta/commit/'+pin;
-  } else {
-    crystaPinLink.textContent = '';
-    crystaPinLink.removeAttribute('href');
-  }
-  crystaPinLink.hidden = !hasPin;
-  snapshotTrigger.textContent = version;
-  snapshotTrigger.setAttribute('aria-label','edi version: '+version);
+  const ediSnapshot = selectedRelease ? selectedRelease.sample : mainSnapshot;
+  snapshotTrigger.textContent = snapshotLabel(version,ediSnapshot);
   cards.setAttribute('aria-label','Metric cards for edi '+version+' and its pinned crysta SDK');
   cards.innerHTML = Object.entries(groups)
     .flatMap(([group,metrics])=>metrics.map(card=>renderCard(group,card,ediSnapshot))).join('');
@@ -525,7 +515,7 @@ const options = choices.map(release=>{
   option.setAttribute('role','option');
   option.setAttribute('aria-selected',String(release===selectedRelease));
   option.tabIndex = -1;
-  option.textContent = release?.tag ?? 'main';
+  option.textContent = snapshotLabel(release?.tag ?? 'main',release ? release.sample : mainSnapshot);
   option.addEventListener('click',()=>{
     selectedRelease = release;
     for (const [index,item] of options.entries()) item.setAttribute('aria-selected',String(choices[index]===release));
