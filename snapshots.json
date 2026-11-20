@@ -545,6 +545,140 @@
           "coverage_sources": {
             "coverage": "https://github.com/enhantica/quality/actions/runs/44537052188"
           }
+        },
+        {
+          "sha": "57c175cb3d83833567aef9e93da1f8e437a6a9fd",
+          "date": "2026-11-20T16:17:00.980587+00:00",
+          "static": {
+            "mi": 30.408596644029785,
+            "p90": 9,
+            "p90_cognitive": 11,
+            "p90_length": 32,
+            "p90_arguments": 4,
+            "p90_exits": 3,
+            "files": 239,
+            "functions": 3937,
+            "logical": 35560,
+            "documentation_lines": 735,
+            "components": [
+              {
+                "name": "Engine",
+                "lines": 57062
+              },
+              {
+                "name": "Public headers",
+                "lines": 8739
+              },
+              {
+                "name": "Bindings",
+                "lines": 5472
+              },
+              {
+                "name": "Native CLI",
+                "lines": 1025
+              }
+            ],
+            "hotspots": [
+              {
+                "score": 214,
+                "component": "Bindings",
+                "name": "Function in Bindings"
+              },
+              {
+                "score": 190,
+                "component": "Engine",
+                "name": "Function in Engine"
+              },
+              {
+                "score": 167,
+                "component": "Engine",
+                "name": "Function in Engine"
+              },
+              {
+                "score": 154,
+                "component": "Engine",
+                "name": "Function in Engine"
+              },
+              {
+                "score": 118,
+                "component": "Engine",
+                "name": "Function in Engine"
+              },
+              {
+                "score": 94,
+                "component": "Engine",
+                "name": "Function in Engine"
+              }
+            ]
+          },
+          "python_static": {
+            "mi": 45.85406754166799,
+            "p90": 6,
+            "p90_cognitive": 9,
+            "p90_length": 15,
+            "p90_arguments": 0,
+            "p90_exits": 2,
+            "files": 2,
+            "functions": 2,
+            "logical": 61,
+            "documentation_lines": 41,
+            "components": [
+              {
+                "name": "Python bootstrap",
+                "lines": 81
+              }
+            ],
+            "hotspots": [
+              {
+                "score": 6,
+                "component": "Python bootstrap",
+                "name": "Function in Python bootstrap"
+              },
+              {
+                "score": 3,
+                "component": "Python bootstrap",
+                "name": "Function in Python bootstrap"
+              }
+            ]
+          },
+          "python_docs": {
+            "covered": 2,
+            "total": 2
+          },
+          "docs": {
+            "covered": 316,
+            "total": 3115
+          },
+          "checks": {
+            "Clang static analysis": "Failed",
+            "Ruff": "Passed"
+          },
+          "ci_url": "https://github.com/enhantica/crysta/actions/runs/44533646411",
+          "coverage_settings": {
+            "coverage": {
+              "target": 80,
+              "line": 278
+            },
+            "python": {
+              "target": 80,
+              "line": 279
+            }
+          },
+          "coverage": {
+            "covered": 46771,
+            "total": 58244,
+            "target": 80
+          },
+          "measurement_run": 44537052188,
+          "checks_url": "https://github.com/enhantica/quality/actions/runs/44537052188",
+          "checks_scope": {
+            "Clang static analysis": "Pinned SDK's Linux clang-tidy task",
+            "Ruff": "Pinned SDK's Ruff lint and format checks"
+          },
+          "coverage_url": "https://github.com/enhantica/quality/actions/runs/44537052188",
+          "coverage_sources": {
+            "coverage": "https://github.com/enhantica/quality/actions/runs/44537052188"
+          }
         }
       ],
       "pins": {
@@ -1828,6 +1962,180 @@
         {
           "sha": "b1d25154ced32e859544507942be9ad8399e24fc",
           "date": "2026-11-19T19:04:04.687401+00:00",
+          "static": {
+            "mi": 26.272617179799585,
+            "p90": 15,
+            "p90_cognitive": 17,
+            "p90_length": 32,
+            "p90_arguments": 3,
+            "p90_exits": 5,
+            "files": 269,
+            "functions": 7461,
+            "logical": 89929,
+            "documentation_lines": 1252,
+            "components": [
+              {
+                "name": "Desktop app",
+                "lines": 80515
+              },
+              {
+                "name": "Core & headers",
+                "lines": 39798
+              },
+              {
+                "name": "Bindings",
+                "lines": 5182
+              },
+              {
+                "name": "Assistant native",
+                "lines": 1124
+              },
+              {
+                "name": "Native CLI",
+                "lines": 642
+              }
+            ],
+            "hotspots": [
+              {
+                "score": 365,
+                "component": "Desktop app",
+                "name": "AssistantWidgetInput::advance",
+                "path": "app/src/assistant_widget_input.cpp",
+                "line": 570
+              },
+              {
+                "score": 335,
+                "component": "Desktop app",
+                "name": "generic_response",
+                "path": "app/src/assistant_view_model.cpp",
+                "line": 14359
+              },
+              {
+                "score": 242,
+                "component": "Core & headers",
+                "name": "load_project_folder",
+                "path": "core/src/io.cpp",
+                "line": 4002
+              },
+              {
+                "score": 231,
+                "component": "Desktop app",
+                "name": "create_widget_next",
+                "path": "app/src/assistant_view_model.cpp",
+                "line": 12795
+              },
+              {
+                "score": 217,
+                "component": "Bindings",
+                "name": "NB_MODULE",
+                "path": "lib/src/bindings.cpp",
+                "line": 2186
+              },
+              {
+                "score": 216,
+                "component": "Desktop app",
+                "name": "generic_event",
+                "path": "app/src/assistant_view_model.cpp",
+                "line": 15218
+              }
+            ]
+          },
+          "python_static": {
+            "mi": 20.770708609286174,
+            "p90": 8,
+            "p90_cognitive": 9,
+            "p90_length": 26,
+            "p90_arguments": 4,
+            "p90_exits": 3,
+            "files": 8,
+            "functions": 207,
+            "logical": 1514,
+            "documentation_lines": 726,
+            "components": [
+              {
+                "name": "Python package",
+                "lines": 2949
+              },
+              {
+                "name": "Python import alias",
+                "lines": 3
+              }
+            ],
+            "hotspots": [
+              {
+                "score": 18,
+                "component": "Python package",
+                "name": "run_calc",
+                "path": "lib/edi/__main__.py",
+                "line": 847
+              },
+              {
+                "score": 14,
+                "component": "Python package",
+                "name": "from_dict",
+                "path": "lib/edi/__init__.py",
+                "line": 1316
+              },
+              {
+                "score": 14,
+                "component": "Python package",
+                "name": "assert_patterns_agree",
+                "path": "lib/edi/verification.py",
+                "line": 818
+              },
+              {
+                "score": 13,
+                "component": "Python package",
+                "name": "main",
+                "path": "lib/edi/__main__.py",
+                "line": 1033
+              },
+              {
+                "score": 12,
+                "component": "Python package",
+                "name": "fit",
+                "path": "lib/edi/__init__.py",
+                "line": 587
+              },
+              {
+                "score": 12,
+                "component": "Python package",
+                "name": "from_scratch",
+                "path": "lib/edi/__init__.py",
+                "line": 1612
+              }
+            ]
+          },
+          "python_docs": {
+            "covered": 91,
+            "total": 130
+          },
+          "docs": {
+            "covered": 456,
+            "total": 3412
+          },
+          "checks": {
+            "Clang static analysis": "Cancelled",
+            "Ruff": "Cancelled",
+            "Sanitizer tests": "Cancelled",
+            "Docs build": "Cancelled"
+          },
+          "ci_url": "https://github.com/enhantica/edi/actions/runs/44583540721",
+          "coverage_settings": {
+            "coverage": {
+              "target": 80,
+              "line": 137
+            },
+            "python": {
+              "target": 80,
+              "line": 132
+            }
+          },
+          "crysta_pin": "57c175cb3d83833567aef9e93da1f8e437a6a9fd"
+        },
+        {
+          "sha": "b1d25154ced32e859544507942be9ad8399e24fc",
+          "date": "2026-11-20T16:17:00.980587+00:00",
           "static": {
             "mi": 26.272617179799585,
             "p90": 15,
