@@ -956,7 +956,7 @@
         },
         {
           "sha": "29c37200b131d70718c789d131ed4b924c212ee3",
-          "date": "2026-11-22T23:16:43.145003+00:00",
+          "date": "2026-11-22T23:29:28.257004+00:00",
           "static": {
             "mi": 30.408596644029785,
             "p90": 9,
@@ -2782,7 +2782,17 @@
               "line": 132
             }
           },
-          "crysta_pin": "57c175cb3d83833567aef9e93da1f8e437a6a9fd"
+          "crysta_pin": "57c175cb3d83833567aef9e93da1f8e437a6a9fd",
+          "coverage_sources": {
+            "coverage": "https://github.com/enhantica/quality/actions/runs/45082329089"
+          },
+          "coverage": {
+            "covered": 19717,
+            "total": 35323,
+            "failed_tests": 2,
+            "target": 80
+          },
+          "coverage_url": "https://github.com/enhantica/quality/actions/runs/45082329089"
         },
         {
           "sha": "b1d25154ced32e859544507942be9ad8399e24fc",
@@ -2956,7 +2966,17 @@
               "line": 132
             }
           },
-          "crysta_pin": "57c175cb3d83833567aef9e93da1f8e437a6a9fd"
+          "crysta_pin": "57c175cb3d83833567aef9e93da1f8e437a6a9fd",
+          "coverage_sources": {
+            "coverage": "https://github.com/enhantica/quality/actions/runs/45082329089"
+          },
+          "coverage": {
+            "covered": 19717,
+            "total": 35323,
+            "failed_tests": 2,
+            "target": 80
+          },
+          "coverage_url": "https://github.com/enhantica/quality/actions/runs/45082329089"
         },
         {
           "sha": "b1d25154ced32e859544507942be9ad8399e24fc",
@@ -3130,7 +3150,17 @@
               "line": 132
             }
           },
-          "crysta_pin": "57c175cb3d83833567aef9e93da1f8e437a6a9fd"
+          "crysta_pin": "57c175cb3d83833567aef9e93da1f8e437a6a9fd",
+          "coverage_sources": {
+            "coverage": "https://github.com/enhantica/quality/actions/runs/45082329089"
+          },
+          "coverage": {
+            "covered": 19717,
+            "total": 35323,
+            "failed_tests": 2,
+            "target": 80
+          },
+          "coverage_url": "https://github.com/enhantica/quality/actions/runs/45082329089"
         },
         {
           "sha": "ffb27403ee0118aa2fcd82055a1c89599928bd9f",
@@ -3308,7 +3338,7 @@
         },
         {
           "sha": "e8e86a659752ecf0f4238936b5cb99d2bb049f32",
-          "date": "2026-11-22T23:16:43.145003+00:00",
+          "date": "2026-11-22T23:29:28.257004+00:00",
           "static": {
             "mi": 26.23658037102389,
             "p90": 15,
@@ -6022,7 +6052,17 @@
                 "line": 132
               }
             },
-            "crysta_pin": "57c175cb3d83833567aef9e93da1f8e437a6a9fd"
+            "crysta_pin": "57c175cb3d83833567aef9e93da1f8e437a6a9fd",
+            "coverage_sources": {
+              "coverage": "https://github.com/enhantica/quality/actions/runs/45082329089"
+            },
+            "coverage": {
+              "covered": 19717,
+              "total": 35323,
+              "failed_tests": 2,
+              "target": 80
+            },
+            "coverage_url": "https://github.com/enhantica/quality/actions/runs/45082329089"
           }
         }
       ]
