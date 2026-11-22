@@ -10,7 +10,7 @@ on:
         type: boolean
         default: false
       sdk_refresh:
-        description: Publish a completed SDK receipt without queuing new measurements
+        description: Publish a completed receipt without queuing new measurements
         type: boolean
         default: false
   workflow_run:
@@ -122,19 +122,22 @@ jobs:
           printf '%s  %s\n' "$DOXYGEN_SHA256" "$docs_tar" | sha256sum --check --strict -
           tar -xzf "$docs_tar" "$docs_bin/doxygen"
           echo "$RUNNER_TEMP/$docs_bin" >> "$GITHUB_PATH"
-      - name: Read edi's aggregate report
+      - name: Read edi's aggregate reports
         if: env.COLLECT_METRICS == 'true' && steps.plan.outputs.refresh == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          run_id="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow edi-measurements.yml --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
-          if [[ -n "$run_id" ]]; then
+          run_ids="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow edi-measurements.yml --branch main --limit 15 --json databaseId,conclusion --jq '.[] | select(.conclusion != "cancelled" and .conclusion != "skipped") | .databaseId')"
+          for run_id in $run_ids; do
             artifact_id="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts" --jq '[.artifacts[] | select(.name == "edi-measurements" and .expired == false)] | .[0].id // empty')"
             if [[ -n "$artifact_id" ]]; then
-              gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name edi-measurements --dir history
+              job_id="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/jobs" --jq '[.jobs[] | select(.name == "measure" and .conclusion == "success")] | .[0].id // empty')"
+              if [[ -n "$job_id" ]]; then
+                gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name edi-measurements --dir "history/edi/$run_id"
+              fi
             fi
-          fi
+          done
       - name: Read pinned crysta aggregate reports
         if: env.COLLECT_METRICS == 'true' && steps.plan.outputs.refresh == 'true'
         env:
@@ -148,7 +151,7 @@ jobs:
           GH_TOKEN: ${{ steps.source-token.outputs.token }}
         run: >-
           python3 scripts/collect.py --edi inputs/edi --docs --github
-          --history history/snapshots.json --edi-measurements history/edi.json
+          --history history/snapshots.json --edi-measurements history/edi
           --crysta-measurements history/crysta
           --release-catalogue "$RUNNER_TEMP/releases.json" --output history/snapshots.json
       - name: Render dashboard
@@ -225,6 +228,18 @@ jobs:
         run: >-
           python3 scripts/crysta_sync.py queue --repo "$GITHUB_REPOSITORY"
           --history history/snapshots.json
+      - name: Queue coverage for the newest edi release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          sha="$(jq -r '.projects.edi.releases[-1].sample | select(.crysta_pin and ((.coverage and .python) | not)) | .sha // empty' history/snapshots.json)"
+          if [[ -z "$sha" ]]; then exit 0; fi
+          if [[ ! "$sha" =~ ^[0-9a-f]{40}$ ]]; then exit 1; fi
+          prior="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow edi-measurements.yml --branch main --limit 30 --json displayTitle,conclusion --jq "[.[] | select(.displayTitle == \"edi metrics $sha\" and .conclusion != \"cancelled\")] | length")"
+          if [[ "$prior" == 0 ]]; then
+            gh workflow run edi-measurements.yml --repo "$GITHUB_REPOSITORY" --ref main -f "edi_sha=$sha"
+          fi
 
   deploy:
     runs-on: ubuntu-24.04

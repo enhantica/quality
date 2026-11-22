@@ -77,3 +77,13 @@ jobs:
           name: edi-measurements
           path: measurement/edi.json
           if-no-files-found: error
+  publish:
+    needs: measure
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: write
+    steps:
+      - name: Request dashboard publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run quality.yml --repo "$GITHUB_REPOSITORY" --ref main -f sdk_refresh=true

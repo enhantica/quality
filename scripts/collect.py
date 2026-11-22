@@ -320,27 +320,35 @@ def merge_edi_measurements(sample, receipt):
         return
 
     pin = sample.get("crysta_pin")
-    if not pin or receipt["sdk_sha"] != pin or type(receipt["run_id"]) is not int or receipt["run_id"] < 1:
+    run_id = receipt["run_id"]
+    if not pin or receipt["sdk_sha"] != pin or type(run_id) is not int or run_id < 1:
         raise ValueError("The coverage receipt does not match edi's declared SDK or workflow run")
 
     reports = {}
     for key in ("coverage", "python"):
+        if key not in receipt:
+            continue
         covered, total = (receipt[key][field] for field in ("covered", "total"))
         if type(total) is not int or type(covered) is not int or not 0 <= covered <= total or total == 0:
             raise ValueError("Invalid coverage counts in the edi measurement receipt")
         reports[key] = {"covered": covered, "total": total}
+    if not reports:
+        raise ValueError("Empty edi coverage receipt")
 
     checks = {name: receipt["checks"][name] for name in ("Clang static analysis", "Ruff")}
     if any(value not in {"Passed", "Failed", "No report"} for value in checks.values()):
         raise ValueError("Invalid check status in the edi measurement receipt")
+    sources = sample.setdefault("coverage_sources", {})
+    url = f"https://github.com/enhantica/quality/actions/runs/{run_id}"
     for key, report in reports.items():
-        if setting := sample["coverage_settings"].get(key):
+        if setting := sample.get("coverage_settings", {}).get(key):
             report["target"] = setting["target"]
-    sample.update(reports)
+        sample[key] = report
+        sources[key] = url
     sample["checks"] = sample.get("checks", {}) | checks
     sample["checks_scope"] = {"Clang static analysis": "Linux core, CLI, and bindings compilation database"}
-    sample["coverage_url"] = f"https://github.com/enhantica/quality/actions/runs/{receipt['run_id']}"
-    sample["checks_url"] = sample["coverage_url"]
+    sample["coverage_url"] = url
+    sample["checks_url"] = url
 
 
 def collect(repo, root, bca, docs, from_github, historical=False):
@@ -393,6 +401,8 @@ def exact_evidence(sample, previous):
         sample.get(key) for key in ("coverage", "python")
     ):
         sample["coverage_url"] = previous["coverage_url"]
+    if previous.get("coverage_sources"):
+        sample["coverage_sources"] = previous["coverage_sources"] | sample.get("coverage_sources", {})
     if not sample.get("checks") or (
         previous.get("checks_url") and not sample.get("checks_url")
     ):
@@ -516,7 +526,6 @@ def collect_releases(catalogue, archived, known, bca, docs, from_github):
 
 def collect_edi(root, previous, catalogue, edi_measurements, bca, docs, from_github):
     sample = collect("edi", root, bca, docs, from_github)
-    merge_edi_measurements(sample, edi_measurements)
     history = previous.get("samples", [])
     archived = previous.get("releases", [])
     known = {row["sha"]: row["sample"] for row in archived}
@@ -530,9 +539,16 @@ def collect_edi(root, previous, catalogue, edi_measurements, bca, docs, from_git
         if row["sha"] != sample["sha"] or datetime.fromisoformat(row["date"]).astimezone(zone).date() != day
     ]
     releases = collect_releases(catalogue, archived, known, bca, docs, from_github)
+    samples = [{**row, "crysta_pin": known[row["sha"]]["crysta_pin"]} for row in (history + [sample])[-90:]]
+    receipts_by_sha = {}
+    for receipt in edi_measurements:
+        receipts_by_sha.setdefault(receipt["sha"], []).append(receipt)
+    for row in [*samples, *(release["sample"] for release in releases)]:
+        for receipt in receipts_by_sha.get(row["sha"], []):
+            merge_edi_measurements(row, receipt)
     return {
         "branch": "main",
-        "samples": [{**row, "crysta_pin": known[row["sha"]]["crysta_pin"]} for row in (history + [sample])[-90:]],
+        "samples": samples,
         "releases": releases,
     }
 
@@ -589,14 +605,22 @@ def main():
     parser.add_argument("--docs", action="store_true")
     parser.add_argument("--github", action="store_true")
     parser.add_argument("--history", type=Path)
-    parser.add_argument("--edi-measurements", type=Path)
+    parser.add_argument("--edi-measurements", type=Path, help="Normalized edi receipt or directory of downloaded receipts")
     parser.add_argument("--crysta-measurements", type=Path, help="Directory of normalized SDK receipts")
     parser.add_argument("--release-catalogue", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     prev = json.loads(args.history.read_text()) if args.history and args.history.exists() else {}
-    edi_measurements = (json.loads(args.edi_measurements.read_text())
-                        if args.edi_measurements and args.edi_measurements.exists() else None)
+    edi_measurements = []
+    if args.edi_measurements:
+        paths = ([args.edi_measurements] if args.edi_measurements.is_file()
+                 else args.edi_measurements.glob("*/edi.json"))
+        for path in paths:
+            receipt = json.loads(path.read_text())
+            if path != args.edi_measurements and path.parent.name != str(receipt["run_id"]):
+                raise ValueError("edi receipt run ID differs from the producing run")
+            edi_measurements.append(receipt)
+        edi_measurements.sort(key=lambda receipt: receipt["run_id"])
     catalogue = json.loads(args.release_catalogue.read_text()) if args.release_catalogue else {}
     receipts = [
         json.loads(path.read_text()) for path in sorted(args.crysta_measurements.glob("*/crysta.json"))
