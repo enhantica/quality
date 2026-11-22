@@ -816,7 +816,7 @@
         },
         {
           "sha": "f765c99872f7fc5cf31357f8e63206a61abc82a1",
-          "date": "2026-11-22T10:24:44.262466+00:00",
+          "date": "2026-11-22T15:29:32.570516+00:00",
           "static": {
             "mi": 30.408596644029785,
             "p90": 9,
@@ -921,7 +921,7 @@
             "Clang static analysis": "Passed",
             "Ruff": "Passed"
           },
-          "ci_url": null,
+          "ci_url": "https://github.com/enhantica/crysta/actions/runs/45004303509",
           "coverage_settings": {
             "coverage": {
               "target": 80,
@@ -1805,7 +1805,7 @@
             "Clang static analysis": "Passed",
             "Ruff": "Passed"
           },
-          "ci_url": null,
+          "ci_url": "https://github.com/enhantica/crysta/actions/runs/45004303509",
           "coverage_settings": {
             "coverage": {
               "target": 80,
@@ -2897,7 +2897,7 @@
         },
         {
           "sha": "ffb27403ee0118aa2fcd82055a1c89599928bd9f",
-          "date": "2026-11-22T10:24:44.262466+00:00",
+          "date": "2026-11-22T15:29:32.570516+00:00",
           "static": {
             "mi": 26.272617179799585,
             "p90": 15,
@@ -3050,8 +3050,13 @@
             "covered": 456,
             "total": 3414
           },
-          "checks": {},
-          "ci_url": null,
+          "checks": {
+            "Clang static analysis": "Failed",
+            "Ruff": "Passed",
+            "Sanitizer tests": "Failed",
+            "Docs build": "Partial"
+          },
+          "ci_url": "https://github.com/enhantica/edi/actions/runs/45004439474",
           "coverage_settings": {
             "coverage": {
               "target": 80,
