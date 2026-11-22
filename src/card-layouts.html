@@ -297,7 +297,12 @@ function testCoverage(project, language, sample) {
   }) : unratedCoverage;
   const scope = language === 'cpp' ? 'executable C++ lines covered'
     : project === 'crysta' ? 'public Python API entries exercised' : 'Python package statements covered';
-  return percent(report,rule,scope);
+  const result = percent(report,rule,scope);
+  if (report?.failed_tests > 0) {
+    result.detail += '. '+number(report.failed_tests)+(report.failed_tests === 1 ? ' unit test failed.' : ' unit tests failed.');
+    result.status = 'fail';
+  }
+  return result;
 }
 function apiDocs(language, sample, source) {
   const scope = language === 'cpp' ? 'public header declarations documented (Doxygen)'

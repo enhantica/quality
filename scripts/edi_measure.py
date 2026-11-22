@@ -7,7 +7,7 @@ import re
 import subprocess
 from tempfile import TemporaryDirectory
 import xml.etree.ElementTree as ET
-from collect import capture, coverage_targets, parse_coverage, successful_tests
+from collect import capture, coverage_targets, parse_coverage
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -46,11 +46,19 @@ def tidy_core(root, run_check):
     return "Passed" if status == 0 else "Failed"
 
 
-def explain_python_gap(log, junit):
+def junit_counts(junit):
     if junit.is_file():
-        suites = ET.parse(junit).findall(".//testsuite")
-        counts = {key: sum(int(suite.get(key, 0)) for suite in suites)
-                  for key in ("tests", "failures", "errors", "skipped")}
+        try:
+            suites = ET.parse(junit).findall(".//testsuite")
+            return {key: sum(int(suite.get(key, 0)) for suite in suites)
+                    for key in ("tests", "failures", "errors", "skipped")}
+        except (ET.ParseError, ValueError):
+            print("Python unit tier wrote an unreadable test report")
+    return {}
+
+
+def explain_python_gap(log, counts):
+    if counts:
         print("Python unit tier: " + ", ".join(f"{value} {key}" for key, value in counts.items()))
         return
     output = log.read_text(errors="replace")
@@ -69,16 +77,18 @@ def measure(edi, crysta, scratch):
     pin = os.environ["CRYSTA_PIN"]
     if not re.fullmatch("[0-9a-f]{40}", pin) or capture("git", "rev-parse", "HEAD", cwd=crysta).strip() != pin:
         raise ValueError("The crysta checkout does not match the edi pin")
-    sdk = scratch / "sdk"
-    sdk.mkdir()
+    qualified_sdk = os.environ.get("EDI_QUALIFIED_SDK")
+    sdk = Path(qualified_sdk) if qualified_sdk else scratch / "sdk"
     runner_exports = {"GITHUB_ENV", "GITHUB_OUTPUT", "GITHUB_PATH", "GITHUB_STATE", "GITHUB_STEP_SUMMARY"}
     env = {key: value for key, value in os.environ.items() if key not in runner_exports}
     env.update(CRYSTA_SRC=str(crysta), CRYSTA_SDK_ARCHIVES=str(sdk), NO_COLOR="1", PY_COLORS="0")
-    sdk_status = run("Linux SDK build and qualification",
-                     ["pixi", "run", "--frozen", "-e", "cpp-ci", "sdk-pack", pin, "linux-64", str(sdk)],
-                     crysta, scratch / "sdk.log", env)
-    if sdk_status != 0:
-        raise RuntimeError(f"The locked SDK build or qualification failed (exit {sdk_status})")
+    if not qualified_sdk:
+        sdk.mkdir()
+        sdk_status = run("Linux SDK build and qualification",
+                         ["pixi", "run", "--frozen", "-e", "cpp-ci", "sdk-pack", pin, "linux-64", str(sdk)],
+                         crysta, scratch / "sdk.log", env)
+        if sdk_status != 0:
+            raise RuntimeError(f"The locked SDK build or qualification failed (exit {sdk_status})")
 
     def run_edi(label, command, filename, extra_env=None):
         return run(label, command, edi, scratch / filename, env | (extra_env or {}))
@@ -86,20 +96,24 @@ def measure(edi, crysta, scratch):
     cpp_status = run_edi("C++ unit coverage", ["pixi", "run", "--frozen", "cpp-coverage-unit"], "cpp.log")
     junit = scratch / "pytest.xml"
     python_status = run_edi("Python unit coverage", ["pixi", "run", "--frozen", "py-cov-unit"],
-                            "py-coverage-report.txt", {"PYTEST_ADDOPTS": f"--junitxml={junit}"})
+                            "py-coverage-report.txt", {"PYTEST_ADDOPTS": f"--maxfail=0 --junitxml={junit}"})
     cpp_report = parse_coverage("edi", edi / "build" / "coverage-unit").get("coverage")
     python_report = parse_coverage("edi", scratch).get("python")
     reports = {}
     if cpp_report is not None:
         # The producer writes this report only after a successful doctest run.
         reports["coverage"] = cpp_report
-    if python_report is not None and successful_tests(junit):
+    counts = junit_counts(junit)
+    if (python_report is not None and python_status in (0, 1) and counts
+            and counts["errors"] == 0 and counts["tests"] > counts["skipped"]):
         reports["python"] = python_report
+        if counts["failures"]:
+            python_report["failed_tests"] = counts["failures"]
     coverage_targets("edi", (edi / "pyproject.toml").read_text(), reports)
     print(f"C++ coverage: {'measured' if 'coverage' in reports else 'unavailable'} (exit {cpp_status})")
     print(f"Python coverage: {'measured' if 'python' in reports else 'unavailable'} (exit {python_status})")
-    if "python" not in reports:
-        explain_python_gap(scratch / "py-coverage-report.txt", junit)
+    if "python" not in reports or counts.get("failures"):
+        explain_python_gap(scratch / "py-coverage-report.txt", counts)
     if not reports:
         raise RuntimeError("Neither test tier produced a verified coverage report")
 

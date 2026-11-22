@@ -332,6 +332,11 @@ def merge_edi_measurements(sample, receipt):
         if type(total) is not int or type(covered) is not int or not 0 <= covered <= total or total == 0:
             raise ValueError("Invalid coverage counts in the edi measurement receipt")
         reports[key] = {"covered": covered, "total": total}
+        if key == "python" and "failed_tests" in receipt[key]:
+            failures = receipt[key]["failed_tests"]
+            if type(failures) is not int or failures <= 0:
+                raise ValueError("Invalid Python failure count in the edi measurement receipt")
+            reports[key]["failed_tests"] = failures
     if not reports:
         raise ValueError("Empty edi coverage receipt")
 

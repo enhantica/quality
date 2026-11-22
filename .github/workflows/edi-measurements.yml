@@ -53,8 +53,9 @@ jobs:
           app-id: ${{ vars.QUALITY_APP_ID || vars.ENHANTICA_APP_ID }}
           private-key: ${{ secrets.QUALITY_APP_KEY || secrets.ENHANTICA_APP_KEY }}
           owner: enhantica
-          repositories: crysta
+          repositories: crysta,edi
           permission-contents: read
+          permission-actions: read
       - uses: actions/checkout@v5
         with:
           repository: enhantica/crysta
@@ -62,6 +63,34 @@ jobs:
           path: inputs/crysta
           token: ${{ steps.source-token.outputs.token }}
           persist-credentials: false
+      - name: Find a qualified Linux SDK from the same edi commit
+        env:
+          GH_TOKEN: ${{ steps.source-token.outputs.token }}
+          CRYSTA_PIN: ${{ steps.pin.outputs.sha }}
+        run: |
+          set -euo pipefail
+          edi_sha="$(git -C inputs/edi rev-parse HEAD)"
+          run_ids="$(gh run list --repo enhantica/edi --workflow ci.yml --commit "$edi_sha" --limit 5 --json databaseId --jq '.[].databaseId')"
+          for run_id in $run_ids; do
+            job_id="$(gh api "repos/enhantica/edi/actions/runs/$run_id/jobs?per_page=100" --jq '[.jobs[] | select(.name == "crysta-sdk / crysta SDK · linux-64" and .conclusion == "success")] | .[0].id // empty')"
+            if [[ -z "$job_id" ]]; then continue; fi
+            sdk="$(gh api "repos/enhantica/edi/actions/runs/$run_id/artifacts" --jq '[.artifacts[] | select(.name == "crysta-sdk-linux-64" and .expired == false)] | .[0].id // empty')"
+            if [[ -z "$sdk" ]]; then continue; fi
+            download="$RUNNER_TEMP/edi-sdk-download"
+            gh run download "$run_id" --repo enhantica/edi --name crysta-sdk-linux-64 --dir "$download"
+            archive="crysta-sdk-$CRYSTA_PIN-linux-64.tar.gz"
+            (
+              cd "$download"
+              sha256sum -- "$archive" | cmp -s - "$archive.sha256"
+            )
+            sdk_dir="$RUNNER_TEMP/edi-qualified-sdk"
+            mkdir -p "$sdk_dir"
+            mv -- "$download/$archive" "$sdk_dir/"
+            rm -rf -- "$download"
+            printf 'EDI_QUALIFIED_SDK=%s\n' "$sdk_dir" >> "$GITHUB_ENV"
+            printf 'Using qualified Linux SDK from edi run %s\n' "$run_id"
+            break
+          done
       - uses: ./inputs/edi/.github/actions/setup-pixi
         with:
           manifest-path: inputs/edi/pixi.toml

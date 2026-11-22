@@ -57,9 +57,9 @@ The dashboard marks increases of at most 10% from the previous ratio as green an
 
 ### edi measurement workflow
 
-**edi coverage and static checks** measures edi main daily. The dashboard queues the newest published edi release when coverage is missing and no measurement has been attempted for that commit. To retry a release manually, dispatch the workflow with its full edi commit SHA. Each run uses the exact crysta pin from that edi commit. The SDK, source checkout, and compiler logs stay on the runner. A verified coverage result for either language is published independently and refreshes Pages.
+**edi coverage and static checks** measures edi main daily. The dashboard queues the newest published edi release when coverage is missing and no measurement has been attempted for that commit. To retry a release manually, dispatch the workflow with its full edi commit SHA. Each run uses the exact crysta pin from that edi commit and reuses a qualified Linux SDK from edi’s own CI when available. The SDK, source checkout, and compiler logs stay on the runner. A verified coverage result for either language is published independently and refreshes Pages.
 
-The C++ figure uses edi's instrumented core unit tier. Python uses the unit tier's statement coverage and requires a completed JUnit report with no failed tests. The Linux clang-tidy result covers the core, CLI, and bindings compilation database. Ruff uses edi's existing style task. The collector matches each receipt to both the edi commit and its crysta pin, and keeps previous verified measurements for either language on that same commit.
+The C++ figure uses edi's instrumented core unit tier. Python uses the unit tier's statement coverage and requires a completed test report. A completed suite with failing tests displays its measured coverage in red and explains the failure count in the tooltip. The Linux clang-tidy result covers the core, CLI, and bindings compilation database. Ruff uses edi's existing style task. The collector matches each receipt to both the edi commit and its crysta pin, and keeps previous verified measurements for either language on that same commit.
 
 ### crysta SDK measurement workflow
 
