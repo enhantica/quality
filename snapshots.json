@@ -956,7 +956,7 @@
         },
         {
           "sha": "29c37200b131d70718c789d131ed4b924c212ee3",
-          "date": "2026-11-22T23:33:00.450397+00:00",
+          "date": "2026-11-22T23:38:30.937916+00:00",
           "static": {
             "mi": 30.408596644029785,
             "p90": 9,
@@ -2813,8 +2813,8 @@
             "total": 3412
           },
           "checks": {
-            "Clang static analysis": "Cancelled",
-            "Ruff": "Cancelled",
+            "Clang static analysis": "Failed",
+            "Ruff": "Passed",
             "Sanitizer tests": "Cancelled",
             "Docs build": "Cancelled"
           },
@@ -2831,7 +2831,8 @@
           },
           "crysta_pin": "57c175cb3d83833567aef9e93da1f8e437a6a9fd",
           "coverage_sources": {
-            "coverage": "https://github.com/enhantica/quality/actions/runs/45082329089"
+            "coverage": "https://github.com/enhantica/quality/actions/runs/45082329089",
+            "python": "https://github.com/enhantica/quality/actions/runs/45082001577"
           },
           "coverage": {
             "covered": 19717,
@@ -2839,7 +2840,17 @@
             "failed_tests": 2,
             "target": 80
           },
-          "coverage_url": "https://github.com/enhantica/quality/actions/runs/45082329089"
+          "coverage_url": "https://github.com/enhantica/quality/actions/runs/45082329089",
+          "python": {
+            "covered": 1176,
+            "total": 1676,
+            "failed_tests": 4,
+            "target": 80
+          },
+          "checks_scope": {
+            "Clang static analysis": "Linux core, CLI, and bindings compilation database"
+          },
+          "checks_url": "https://github.com/enhantica/quality/actions/runs/45082001577"
         },
         {
           "sha": "b1d25154ced32e859544507942be9ad8399e24fc",
@@ -2997,8 +3008,8 @@
             "total": 3412
           },
           "checks": {
-            "Clang static analysis": "Cancelled",
-            "Ruff": "Cancelled",
+            "Clang static analysis": "Failed",
+            "Ruff": "Passed",
             "Sanitizer tests": "Cancelled",
             "Docs build": "Cancelled"
           },
@@ -3015,7 +3026,8 @@
           },
           "crysta_pin": "57c175cb3d83833567aef9e93da1f8e437a6a9fd",
           "coverage_sources": {
-            "coverage": "https://github.com/enhantica/quality/actions/runs/45082329089"
+            "coverage": "https://github.com/enhantica/quality/actions/runs/45082329089",
+            "python": "https://github.com/enhantica/quality/actions/runs/45082001577"
           },
           "coverage": {
             "covered": 19717,
@@ -3023,7 +3035,17 @@
             "failed_tests": 2,
             "target": 80
           },
-          "coverage_url": "https://github.com/enhantica/quality/actions/runs/45082329089"
+          "coverage_url": "https://github.com/enhantica/quality/actions/runs/45082329089",
+          "python": {
+            "covered": 1176,
+            "total": 1676,
+            "failed_tests": 4,
+            "target": 80
+          },
+          "checks_scope": {
+            "Clang static analysis": "Linux core, CLI, and bindings compilation database"
+          },
+          "checks_url": "https://github.com/enhantica/quality/actions/runs/45082001577"
         },
         {
           "sha": "b1d25154ced32e859544507942be9ad8399e24fc",
@@ -3181,8 +3203,8 @@
             "total": 3412
           },
           "checks": {
-            "Clang static analysis": "Cancelled",
-            "Ruff": "Cancelled",
+            "Clang static analysis": "Failed",
+            "Ruff": "Passed",
             "Sanitizer tests": "Cancelled",
             "Docs build": "Cancelled"
           },
@@ -3199,7 +3221,8 @@
           },
           "crysta_pin": "57c175cb3d83833567aef9e93da1f8e437a6a9fd",
           "coverage_sources": {
-            "coverage": "https://github.com/enhantica/quality/actions/runs/45082329089"
+            "coverage": "https://github.com/enhantica/quality/actions/runs/45082329089",
+            "python": "https://github.com/enhantica/quality/actions/runs/45082001577"
           },
           "coverage": {
             "covered": 19717,
@@ -3207,7 +3230,17 @@
             "failed_tests": 2,
             "target": 80
           },
-          "coverage_url": "https://github.com/enhantica/quality/actions/runs/45082329089"
+          "coverage_url": "https://github.com/enhantica/quality/actions/runs/45082329089",
+          "python": {
+            "covered": 1176,
+            "total": 1676,
+            "failed_tests": 4,
+            "target": 80
+          },
+          "checks_scope": {
+            "Clang static analysis": "Linux core, CLI, and bindings compilation database"
+          },
+          "checks_url": "https://github.com/enhantica/quality/actions/runs/45082001577"
         },
         {
           "sha": "ffb27403ee0118aa2fcd82055a1c89599928bd9f",
@@ -3385,7 +3418,7 @@
         },
         {
           "sha": "e8e86a659752ecf0f4238936b5cb99d2bb049f32",
-          "date": "2026-11-22T23:33:00.450397+00:00",
+          "date": "2026-11-22T23:38:30.937916+00:00",
           "static": {
             "mi": 26.23658037102389,
             "p90": 15,
@@ -3538,7 +3571,10 @@
             "covered": 457,
             "total": 3432
           },
-          "checks": {},
+          "checks": {
+            "Clang static analysis": "Passed",
+            "Ruff": "Passed"
+          },
           "ci_url": null,
           "coverage_settings": {
             "coverage": {
@@ -3550,7 +3586,26 @@
               "line": 132
             }
           },
-          "crysta_pin": "29c37200b131d70718c789d131ed4b924c212ee3"
+          "crysta_pin": "29c37200b131d70718c789d131ed4b924c212ee3",
+          "coverage_sources": {
+            "coverage": "https://github.com/enhantica/quality/actions/runs/45082004709",
+            "python": "https://github.com/enhantica/quality/actions/runs/45082004709"
+          },
+          "coverage": {
+            "covered": 19830,
+            "total": 42857,
+            "target": 80
+          },
+          "python": {
+            "covered": 1179,
+            "total": 1679,
+            "target": 80
+          },
+          "checks_scope": {
+            "Clang static analysis": "Linux core, CLI, and bindings compilation database"
+          },
+          "checks_url": "https://github.com/enhantica/quality/actions/runs/45082004709",
+          "coverage_url": "https://github.com/enhantica/quality/actions/runs/45082004709"
         }
       ],
       "releases": [
@@ -6083,8 +6138,8 @@
               "total": 3412
             },
             "checks": {
-              "Clang static analysis": "Cancelled",
-              "Ruff": "Cancelled",
+              "Clang static analysis": "Failed",
+              "Ruff": "Passed",
               "Sanitizer tests": "Cancelled",
               "Docs build": "Cancelled"
             },
@@ -6101,7 +6156,8 @@
             },
             "crysta_pin": "57c175cb3d83833567aef9e93da1f8e437a6a9fd",
             "coverage_sources": {
-              "coverage": "https://github.com/enhantica/quality/actions/runs/45082329089"
+              "coverage": "https://github.com/enhantica/quality/actions/runs/45082329089",
+              "python": "https://github.com/enhantica/quality/actions/runs/45082001577"
             },
             "coverage": {
               "covered": 19717,
@@ -6109,7 +6165,17 @@
               "failed_tests": 2,
               "target": 80
             },
-            "coverage_url": "https://github.com/enhantica/quality/actions/runs/45082329089"
+            "coverage_url": "https://github.com/enhantica/quality/actions/runs/45082329089",
+            "python": {
+              "covered": 1176,
+              "total": 1676,
+              "failed_tests": 4,
+              "target": 80
+            },
+            "checks_scope": {
+              "Clang static analysis": "Linux core, CLI, and bindings compilation database"
+            },
+            "checks_url": "https://github.com/enhantica/quality/actions/runs/45082001577"
           }
         }
       ]
