@@ -7,6 +7,10 @@ on:
       edi_sha:
         description: Full edi commit SHA to measure (blank for main)
         type: string
+      cpp_only:
+        description: Retry C++ coverage without running the other checks
+        type: boolean
+        default: false
   schedule:
     - cron: '15 7 * * *'
       timezone: Europe/Stockholm
@@ -15,7 +19,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: quality-edi-measurements-${{ inputs.edi_sha || 'main' }}
+  group: quality-edi-measurements-${{ inputs.edi_sha || 'main' }}-${{ inputs.cpp_only && 'cpp' || 'all' }}
   cancel-in-progress: false
 
 jobs:
@@ -99,6 +103,7 @@ jobs:
       - name: Run source-safe Linux measurements
         env:
           CRYSTA_PIN: ${{ steps.pin.outputs.sha }}
+          EDI_CPP_ONLY: ${{ inputs.cpp_only }}
         run: python3 -u scripts/edi_measure.py
       - name: Retain only normalized measurements
         uses: actions/upload-artifact@v4

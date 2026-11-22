@@ -332,16 +332,18 @@ def merge_edi_measurements(sample, receipt):
         if type(total) is not int or type(covered) is not int or not 0 <= covered <= total or total == 0:
             raise ValueError("Invalid coverage counts in the edi measurement receipt")
         reports[key] = {"covered": covered, "total": total}
-        if key == "python" and "failed_tests" in receipt[key]:
+        if "failed_tests" in receipt[key]:
             failures = receipt[key]["failed_tests"]
             if type(failures) is not int or failures <= 0:
-                raise ValueError("Invalid Python failure count in the edi measurement receipt")
+                raise ValueError("Invalid test failure count in the edi measurement receipt")
             reports[key]["failed_tests"] = failures
     if not reports:
         raise ValueError("Empty edi coverage receipt")
 
-    checks = {name: receipt["checks"][name] for name in ("Clang static analysis", "Ruff")}
-    if any(value not in {"Passed", "Failed", "No report"} for value in checks.values()):
+    checks = receipt["checks"]
+    if set(checks) - {"Clang static analysis", "Ruff"} or any(
+        value not in {"Passed", "Failed", "No report"} for value in checks.values()
+    ):
         raise ValueError("Invalid check status in the edi measurement receipt")
     sources = sample.setdefault("coverage_sources", {})
     url = f"https://github.com/enhantica/quality/actions/runs/{run_id}"
@@ -350,10 +352,11 @@ def merge_edi_measurements(sample, receipt):
             report["target"] = setting["target"]
         sample[key] = report
         sources[key] = url
-    sample["checks"] = sample.get("checks", {}) | checks
-    sample["checks_scope"] = {"Clang static analysis": "Linux core, CLI, and bindings compilation database"}
+    if checks:
+        sample["checks"] = sample.get("checks", {}) | checks
+        sample["checks_scope"] = {"Clang static analysis": "Linux core, CLI, and bindings compilation database"}
+        sample["checks_url"] = url
     sample["coverage_url"] = url
-    sample["checks_url"] = url
 
 
 def collect(repo, root, bca, docs, from_github, historical=False):

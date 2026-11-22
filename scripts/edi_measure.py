@@ -73,6 +73,49 @@ def explain_python_gap(log, counts):
     print("Python unit tier stopped before writing its test report")
 
 
+def completed_cpp_failures(log):
+    summary = re.search(
+        r"^\[doctest\]\s+test cases:\s*(\d+)\s*\|\s*(\d+) passed\s*\|"
+        r"\s*(\d+) failed\s*\|\s*(\d+) skipped\s*$", log, re.M,
+    )
+    if not summary or not re.search(r"^\[doctest\]\s+Status: FAILURE!?\s*$", log, re.M):
+        return 0
+    total, passed, failed, skipped = map(int, summary.groups())
+    return failed if total == passed + failed and skipped == 0 else 0
+
+
+def native_coverage(edi, scratch, run_edi):
+    status = run_edi("C++ unit coverage", ["pixi", "run", "--frozen", "cpp-coverage-unit"], "cpp.log")
+    tree = edi / "build" / "coverage-unit"
+    if report := parse_coverage("edi", tree).get("coverage"):
+        return report, status
+    if status != 1:
+        return None, status
+    # Keep the product gate's failure while measuring reach from a complete,
+    # non-vacuous doctest run that wrote its profile before exiting.
+    profiles = list(tree.glob("profraw.*/edi_tests.profraw"))
+    if len(profiles) != 1 or not profiles[0].stat().st_size:
+        return None, status
+    profile = profiles[0]
+    log = profile.with_name("run.log")
+    if not log.is_file() or not (failed := completed_cpp_failures(log.read_text(errors="replace"))):
+        return None, status
+    merged = scratch / "edi.profdata"
+    if run_edi("Merge the completed C++ profile",
+               ["pixi", "run", "--frozen", "llvm-profdata", "merge", "-sparse", str(profile), "-o", str(merged)],
+               "profdata.log") != 0:
+        return None, status
+    if run_edi("Measure C++ reach from the completed test tier",
+               ["pixi", "run", "--frozen", "llvm-cov", "report", str(tree / "core" / "edi_tests"),
+                f"-instr-profile={merged}", "core/src", "core/include"], "coverage-report.txt") != 0:
+        return None, status
+    report = parse_coverage("edi", scratch).get("coverage")
+    if report:
+        report["failed_tests"] = failed
+        print(f"C++ unit tier: {failed} tests failed")
+    return report, status
+
+
 def measure(edi, crysta, scratch):
     pin = os.environ["CRYSTA_PIN"]
     if not re.fullmatch("[0-9a-f]{40}", pin) or capture("git", "rev-parse", "HEAD", cwd=crysta).strip() != pin:
@@ -93,35 +136,37 @@ def measure(edi, crysta, scratch):
     def run_edi(label, command, filename, extra_env=None):
         return run(label, command, edi, scratch / filename, env | (extra_env or {}))
 
-    cpp_status = run_edi("C++ unit coverage", ["pixi", "run", "--frozen", "cpp-coverage-unit"], "cpp.log")
-    junit = scratch / "pytest.xml"
-    python_status = run_edi("Python unit coverage", ["pixi", "run", "--frozen", "py-cov-unit"],
-                            "py-coverage-report.txt", {"PYTEST_ADDOPTS": f"--maxfail=0 --junitxml={junit}"})
-    cpp_report = parse_coverage("edi", edi / "build" / "coverage-unit").get("coverage")
-    python_report = parse_coverage("edi", scratch).get("python")
+    cpp_only = os.environ.get("EDI_CPP_ONLY") == "true"
+    cpp_report, cpp_status = native_coverage(edi, scratch, run_edi)
+    print(f"C++ coverage: {'measured' if cpp_report else 'unavailable'} (exit {cpp_status})")
     reports = {}
-    if cpp_report is not None:
-        # The producer writes this report only after a successful doctest run.
+    if cpp_report:
         reports["coverage"] = cpp_report
-    counts = junit_counts(junit)
-    if (python_report is not None and python_status in (0, 1) and counts
-            and counts["errors"] == 0 and counts["tests"] > counts["skipped"]):
-        reports["python"] = python_report
-        if counts["failures"]:
-            python_report["failed_tests"] = counts["failures"]
+    if not cpp_only:
+        junit = scratch / "pytest.xml"
+        python_status = run_edi("Python unit coverage", ["pixi", "run", "--frozen", "py-cov-unit"],
+                                "py-coverage-report.txt", {"PYTEST_ADDOPTS": f"--maxfail=0 --junitxml={junit}"})
+        python_report = parse_coverage("edi", scratch).get("python")
+        counts = junit_counts(junit)
+        if (python_report is not None and python_status in (0, 1) and counts
+                and counts["errors"] == 0 and counts["tests"] > counts["skipped"]):
+            if counts["failures"]:
+                python_report["failed_tests"] = counts["failures"]
+            reports["python"] = python_report
+        print(f"Python coverage: {'measured' if 'python' in reports else 'unavailable'} (exit {python_status})")
+        if "python" not in reports or counts.get("failures"):
+            explain_python_gap(scratch / "py-coverage-report.txt", counts)
     coverage_targets("edi", (edi / "pyproject.toml").read_text(), reports)
-    print(f"C++ coverage: {'measured' if 'coverage' in reports else 'unavailable'} (exit {cpp_status})")
-    print(f"Python coverage: {'measured' if 'python' in reports else 'unavailable'} (exit {python_status})")
-    if "python" not in reports or counts.get("failures"):
-        explain_python_gap(scratch / "py-coverage-report.txt", counts)
     if not reports:
         raise RuntimeError("Neither test tier produced a verified coverage report")
 
-    ruff_status = run_edi("Ruff checks", ["pixi", "run", "--frozen", "lint", "style"], "ruff.log")
-    checks = {
-        "Clang static analysis": tidy_core(edi, run_edi),
-        "Ruff": "Passed" if ruff_status == 0 else "Failed",
-    }
+    checks = {}
+    if not cpp_only:
+        ruff_status = run_edi("Ruff checks", ["pixi", "run", "--frozen", "lint", "style"], "ruff.log")
+        checks = {
+            "Clang static analysis": tidy_core(edi, run_edi),
+            "Ruff": "Passed" if ruff_status == 0 else "Failed",
+        }
     return {
         "repo": "edi",
         "sha": capture("git", "rev-parse", "HEAD", cwd=edi).strip(),
