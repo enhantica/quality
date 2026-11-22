@@ -1,7 +1,12 @@
 name: edi coverage and static checks
+run-name: edi metrics ${{ inputs.edi_sha || 'main' }}
 
 on:
   workflow_dispatch:
+    inputs:
+      edi_sha:
+        description: Full edi commit SHA to measure (blank for main)
+        type: string
   schedule:
     - cron: '15 7 * * *'
       timezone: Europe/Stockholm
@@ -10,7 +15,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: quality-edi-measurements
+  group: quality-edi-measurements-${{ inputs.edi_sha || 'main' }}
   cancel-in-progress: false
 
 jobs:
@@ -22,10 +27,18 @@ jobs:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
+      - name: Validate the optional edi commit
+        env:
+          EDI_SHA: ${{ inputs.edi_sha }}
+        run: |
+          if [[ -n "$EDI_SHA" && ! "$EDI_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo 'Expected a full edi commit SHA'
+            exit 1
+          fi
       - uses: actions/checkout@v5
         with:
           repository: enhantica/edi
-          ref: main
+          ref: ${{ inputs.edi_sha || 'main' }}
           path: inputs/edi
           fetch-depth: 0
           persist-credentials: false

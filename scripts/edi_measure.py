@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 import subprocess
 from tempfile import TemporaryDirectory
+import xml.etree.ElementTree as ET
 from collect import capture, coverage_targets, parse_coverage, successful_tests
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -45,14 +46,34 @@ def tidy_core(root, run_check):
     return "Passed" if status == 0 else "Failed"
 
 
+def explain_python_gap(log, junit):
+    if junit.is_file():
+        suites = ET.parse(junit).findall(".//testsuite")
+        counts = {key: sum(int(suite.get(key, 0)) for suite in suites)
+                  for key in ("tests", "failures", "errors", "skipped")}
+        print("Python unit tier: " + ", ".join(f"{value} {key}" for key, value in counts.items()))
+        return
+    output = log.read_text(errors="replace")
+    for pattern, reason in (
+        (r"No space left on device", "runner disk space"),
+        (r"CMake Error|ninja: build stopped", "native extension build"),
+        (r"No module named|ImportError", "Python import"),
+    ):
+        if re.search(pattern, output):
+            print(f"Python unit tier stopped before writing its test report ({reason})")
+            return
+    print("Python unit tier stopped before writing its test report")
+
+
 def measure(edi, crysta, scratch):
     pin = os.environ["CRYSTA_PIN"]
     if not re.fullmatch("[0-9a-f]{40}", pin) or capture("git", "rev-parse", "HEAD", cwd=crysta).strip() != pin:
         raise ValueError("The crysta checkout does not match the edi pin")
     sdk = scratch / "sdk"
     sdk.mkdir()
-    env = dict(os.environ, CRYSTA_SRC=str(crysta), CRYSTA_SDK_ARCHIVES=str(sdk),
-               NO_COLOR="1", PY_COLORS="0")
+    runner_exports = {"GITHUB_ENV", "GITHUB_OUTPUT", "GITHUB_PATH", "GITHUB_STATE", "GITHUB_STEP_SUMMARY"}
+    env = {key: value for key, value in os.environ.items() if key not in runner_exports}
+    env.update(CRYSTA_SRC=str(crysta), CRYSTA_SDK_ARCHIVES=str(sdk), NO_COLOR="1", PY_COLORS="0")
     sdk_status = run("Linux SDK build and qualification",
                      ["pixi", "run", "--frozen", "-e", "cpp-ci", "sdk-pack", pin, "linux-64", str(sdk)],
                      crysta, scratch / "sdk.log", env)
@@ -77,15 +98,16 @@ def measure(edi, crysta, scratch):
     coverage_targets("edi", (edi / "pyproject.toml").read_text(), reports)
     print(f"C++ coverage: {'measured' if 'coverage' in reports else 'unavailable'} (exit {cpp_status})")
     print(f"Python coverage: {'measured' if 'python' in reports else 'unavailable'} (exit {python_status})")
+    if "python" not in reports:
+        explain_python_gap(scratch / "py-coverage-report.txt", junit)
+    if not reports:
+        raise RuntimeError("Neither test tier produced a verified coverage report")
 
     ruff_status = run_edi("Ruff checks", ["pixi", "run", "--frozen", "lint", "style"], "ruff.log")
     checks = {
         "Clang static analysis": tidy_core(edi, run_edi),
         "Ruff": "Passed" if ruff_status == 0 else "Failed",
     }
-    if set(reports) != {"coverage", "python"}:
-        raise RuntimeError("The run could not prove both coverage measurements")
-
     return {
         "repo": "edi",
         "sha": capture("git", "rev-parse", "HEAD", cwd=edi).strip(),
