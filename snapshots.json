@@ -956,7 +956,7 @@
         },
         {
           "sha": "29c37200b131d70718c789d131ed4b924c212ee3",
-          "date": "2026-11-22T23:39:40.503801+00:00",
+          "date": "2026-11-23T18:35:39.704857+00:00",
           "static": {
             "mi": 30.408596644029785,
             "p90": 9,
@@ -3418,7 +3418,7 @@
         },
         {
           "sha": "e8e86a659752ecf0f4238936b5cb99d2bb049f32",
-          "date": "2026-11-22T23:39:40.503801+00:00",
+          "date": "2026-11-23T18:35:39.704857+00:00",
           "static": {
             "mi": 26.23658037102389,
             "p90": 15,
@@ -3575,7 +3575,7 @@
             "Clang static analysis": "Passed",
             "Ruff": "Passed"
           },
-          "ci_url": null,
+          "ci_url": "https://github.com/enhantica/edi/actions/runs/45074333307",
           "coverage_settings": {
             "coverage": {
               "target": 80,
@@ -3597,15 +3597,15 @@
             "total": 1679,
             "target": 80
           },
-          "coverage_url": "https://github.com/enhantica/quality/actions/runs/45082004709",
+          "coverage_url": "https://github.com/enhantica/quality/actions/runs/45235109294",
           "coverage_sources": {
-            "coverage": "https://github.com/enhantica/quality/actions/runs/45082004709",
-            "python": "https://github.com/enhantica/quality/actions/runs/45082004709"
+            "coverage": "https://github.com/enhantica/quality/actions/runs/45235109294",
+            "python": "https://github.com/enhantica/quality/actions/runs/45235109294"
           },
           "checks_scope": {
             "Clang static analysis": "Linux core, CLI, and bindings compilation database"
           },
-          "checks_url": "https://github.com/enhantica/quality/actions/runs/45082004709"
+          "checks_url": "https://github.com/enhantica/quality/actions/runs/45235109294"
         }
       ],
       "releases": [
