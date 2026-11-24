@@ -1096,7 +1096,7 @@
         },
         {
           "sha": "940362af1a30e4ae69e6aa8b2e40bc9148e7677d",
-          "date": "2026-11-24T19:00:02.776410+00:00",
+          "date": "2026-11-24T19:15:49.426612+00:00",
           "static": {
             "mi": 30.408596644029785,
             "p90": 9,
@@ -1197,7 +1197,10 @@
             "covered": 316,
             "total": 3117
           },
-          "checks": {},
+          "checks": {
+            "Clang static analysis": "Passed",
+            "Ruff": "Passed"
+          },
           "ci_url": null,
           "coverage_settings": {
             "coverage": {
@@ -1208,6 +1211,27 @@
               "target": 80,
               "line": 279
             }
+          },
+          "coverage": {
+            "covered": 46989,
+            "total": 58542,
+            "target": 80
+          },
+          "python": {
+            "covered": 588,
+            "total": 675,
+            "target": 80
+          },
+          "measurement_run": 45465610344,
+          "checks_url": "https://github.com/enhantica/quality/actions/runs/45465610344",
+          "checks_scope": {
+            "Clang static analysis": "Pinned SDK's Linux clang-tidy task",
+            "Ruff": "Pinned SDK's Ruff lint and format checks"
+          },
+          "coverage_url": "https://github.com/enhantica/quality/actions/runs/45465610344",
+          "coverage_sources": {
+            "coverage": "https://github.com/enhantica/quality/actions/runs/45465610344",
+            "python": "https://github.com/enhantica/quality/actions/runs/45465610344"
           }
         }
       ],
@@ -1965,7 +1989,10 @@
             "covered": 316,
             "total": 3117
           },
-          "checks": {},
+          "checks": {
+            "Clang static analysis": "Passed",
+            "Ruff": "Passed"
+          },
           "ci_url": null,
           "coverage_settings": {
             "coverage": {
@@ -1976,6 +2003,27 @@
               "target": 80,
               "line": 279
             }
+          },
+          "coverage": {
+            "covered": 46989,
+            "total": 58542,
+            "target": 80
+          },
+          "python": {
+            "covered": 588,
+            "total": 675,
+            "target": 80
+          },
+          "measurement_run": 45465610344,
+          "checks_url": "https://github.com/enhantica/quality/actions/runs/45465610344",
+          "checks_scope": {
+            "Clang static analysis": "Pinned SDK's Linux clang-tidy task",
+            "Ruff": "Pinned SDK's Ruff lint and format checks"
+          },
+          "coverage_url": "https://github.com/enhantica/quality/actions/runs/45465610344",
+          "coverage_sources": {
+            "coverage": "https://github.com/enhantica/quality/actions/runs/45465610344",
+            "python": "https://github.com/enhantica/quality/actions/runs/45465610344"
           }
         },
         "965dba82fd8b0f0f840ff048687d8f5a4da5048d": {
@@ -2352,8 +2400,7 @@
         }
       },
       "pending_measurements": [
-        "57c175cb3d83833567aef9e93da1f8e437a6a9fd",
-        "940362af1a30e4ae69e6aa8b2e40bc9148e7677d"
+        "57c175cb3d83833567aef9e93da1f8e437a6a9fd"
       ]
     },
     "edi": {
@@ -3842,7 +3889,7 @@
         },
         {
           "sha": "33273fedd3751e201e50fd6a21e0f7ecf61b7360",
-          "date": "2026-11-24T19:00:02.776410+00:00",
+          "date": "2026-11-24T19:15:49.426612+00:00",
           "static": {
             "mi": 26.385270595782675,
             "p90": 15,
