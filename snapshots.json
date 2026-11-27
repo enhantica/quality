@@ -1795,6 +1795,146 @@
             "coverage": "https://github.com/enhantica/quality/actions/runs/45944307438",
             "python": "https://github.com/enhantica/quality/actions/runs/45944307438"
           }
+        },
+        {
+          "sha": "4b418f93622ad41bc2fba26ff5f8f531ed9ed884",
+          "date": "2026-11-27T17:23:12.390464+00:00",
+          "static": {
+            "mi": 30.408596644029785,
+            "p90": 9,
+            "p90_cognitive": 11,
+            "p90_length": 32,
+            "p90_arguments": 4,
+            "p90_exits": 3,
+            "files": 239,
+            "functions": 3958,
+            "logical": 35801,
+            "documentation_lines": 735,
+            "components": [
+              {
+                "name": "Engine",
+                "lines": 57535
+              },
+              {
+                "name": "Public headers",
+                "lines": 8753
+              },
+              {
+                "name": "Bindings",
+                "lines": 5472
+              },
+              {
+                "name": "Native CLI",
+                "lines": 1025
+              }
+            ],
+            "hotspots": [
+              {
+                "score": 214,
+                "component": "Bindings",
+                "name": "Function in Bindings"
+              },
+              {
+                "score": 190,
+                "component": "Engine",
+                "name": "Function in Engine"
+              },
+              {
+                "score": 177,
+                "component": "Engine",
+                "name": "Function in Engine"
+              },
+              {
+                "score": 172,
+                "component": "Engine",
+                "name": "Function in Engine"
+              },
+              {
+                "score": 121,
+                "component": "Engine",
+                "name": "Function in Engine"
+              },
+              {
+                "score": 94,
+                "component": "Engine",
+                "name": "Function in Engine"
+              }
+            ]
+          },
+          "python_static": {
+            "mi": 45.85406754166799,
+            "p90": 6,
+            "p90_cognitive": 9,
+            "p90_length": 15,
+            "p90_arguments": 0,
+            "p90_exits": 2,
+            "files": 2,
+            "functions": 2,
+            "logical": 61,
+            "documentation_lines": 41,
+            "components": [
+              {
+                "name": "Python bootstrap",
+                "lines": 81
+              }
+            ],
+            "hotspots": [
+              {
+                "score": 6,
+                "component": "Python bootstrap",
+                "name": "Function in Python bootstrap"
+              },
+              {
+                "score": 3,
+                "component": "Python bootstrap",
+                "name": "Function in Python bootstrap"
+              }
+            ]
+          },
+          "python_docs": {
+            "covered": 2,
+            "total": 2
+          },
+          "docs": {
+            "covered": 316,
+            "total": 3119
+          },
+          "checks": {
+            "Clang static analysis": "Passed",
+            "Ruff": "Passed"
+          },
+          "ci_url": null,
+          "coverage_settings": {
+            "coverage": {
+              "target": 80,
+              "line": 278
+            },
+            "python": {
+              "target": 80,
+              "line": 279
+            }
+          },
+          "coverage": {
+            "covered": 47021,
+            "total": 58685,
+            "target": 80
+          },
+          "python": {
+            "covered": 588,
+            "total": 675,
+            "target": 80
+          },
+          "measurement_run": 45944307438,
+          "checks_url": "https://github.com/enhantica/quality/actions/runs/45944307438",
+          "checks_scope": {
+            "Clang static analysis": "Pinned SDK's Linux clang-tidy task",
+            "Ruff": "Pinned SDK's Ruff lint and format checks"
+          },
+          "coverage_url": "https://github.com/enhantica/quality/actions/runs/45944307438",
+          "coverage_sources": {
+            "coverage": "https://github.com/enhantica/quality/actions/runs/45944307438",
+            "python": "https://github.com/enhantica/quality/actions/runs/45944307438"
+          }
         }
       ],
       "pins": {
@@ -5648,6 +5788,197 @@
             }
           },
           "crysta_pin": "4b418f93622ad41bc2fba26ff5f8f531ed9ed884"
+        },
+        {
+          "sha": "eb45dc1a7573e81e0febbf501067715573fa7f1a",
+          "date": "2026-11-27T17:23:12.390464+00:00",
+          "static": {
+            "mi": 27.06180618392603,
+            "p90": 15,
+            "p90_cognitive": 17,
+            "p90_length": 33,
+            "p90_arguments": 3,
+            "p90_exits": 5,
+            "files": 296,
+            "functions": 8156,
+            "logical": 102295,
+            "documentation_lines": 1306,
+            "components": [
+              {
+                "name": "Desktop app",
+                "lines": 89979
+              },
+              {
+                "name": "Core & headers",
+                "lines": 47709
+              },
+              {
+                "name": "Bindings",
+                "lines": 5221
+              },
+              {
+                "name": "Assistant native",
+                "lines": 1124
+              },
+              {
+                "name": "Native CLI",
+                "lines": 674
+              }
+            ],
+            "hotspots": [
+              {
+                "score": 674,
+                "component": "Desktop app",
+                "name": "DemoDriver::check_layout",
+                "path": "app/src/demo_driver.cpp",
+                "line": 6253
+              },
+              {
+                "score": 386,
+                "component": "Desktop app",
+                "name": "AssistantWidgetInput::advance",
+                "path": "app/src/assistant_widget_input.cpp",
+                "line": 691
+              },
+              {
+                "score": 378,
+                "component": "Desktop app",
+                "name": "DemoDriver::perform",
+                "path": "app/src/demo_driver.cpp",
+                "line": 4636
+              },
+              {
+                "score": 335,
+                "component": "Desktop app",
+                "name": "generic_response",
+                "path": "app/src/assistant_view_model.cpp",
+                "line": 15380
+              },
+              {
+                "score": 315,
+                "component": "Desktop app",
+                "name": "DemoDriver::next_action",
+                "path": "app/src/demo_driver.cpp",
+                "line": 3499
+              },
+              {
+                "score": 290,
+                "component": "Desktop app",
+                "name": "DemoDriver::DemoDriver",
+                "path": "app/src/demo_driver.cpp",
+                "line": 135
+              }
+            ]
+          },
+          "python_static": {
+            "mi": 20.770708609286174,
+            "p90": 8,
+            "p90_cognitive": 9,
+            "p90_length": 26,
+            "p90_arguments": 4,
+            "p90_exits": 3,
+            "files": 8,
+            "functions": 207,
+            "logical": 1517,
+            "documentation_lines": 726,
+            "components": [
+              {
+                "name": "Python package",
+                "lines": 2961
+              },
+              {
+                "name": "Python import alias",
+                "lines": 3
+              }
+            ],
+            "hotspots": [
+              {
+                "score": 18,
+                "component": "Python package",
+                "name": "run_calc",
+                "path": "lib/edi/__main__.py",
+                "line": 847
+              },
+              {
+                "score": 14,
+                "component": "Python package",
+                "name": "from_dict",
+                "path": "lib/edi/__init__.py",
+                "line": 1328
+              },
+              {
+                "score": 14,
+                "component": "Python package",
+                "name": "assert_patterns_agree",
+                "path": "lib/edi/verification.py",
+                "line": 818
+              },
+              {
+                "score": 13,
+                "component": "Python package",
+                "name": "main",
+                "path": "lib/edi/__main__.py",
+                "line": 1033
+              },
+              {
+                "score": 12,
+                "component": "Python package",
+                "name": "fit",
+                "path": "lib/edi/__init__.py",
+                "line": 599
+              },
+              {
+                "score": 12,
+                "component": "Python package",
+                "name": "from_scratch",
+                "path": "lib/edi/__init__.py",
+                "line": 1624
+              }
+            ]
+          },
+          "python_docs": {
+            "covered": 91,
+            "total": 130
+          },
+          "docs": {
+            "covered": 466,
+            "total": 3460
+          },
+          "checks": {
+            "Clang static analysis": "Passed",
+            "Ruff": "Passed"
+          },
+          "ci_url": null,
+          "coverage_settings": {
+            "coverage": {
+              "target": 80,
+              "line": 137
+            },
+            "python": {
+              "target": 80,
+              "line": 132
+            }
+          },
+          "crysta_pin": "4b418f93622ad41bc2fba26ff5f8f531ed9ed884",
+          "coverage_sources": {
+            "coverage": "https://github.com/enhantica/quality/actions/runs/46035480996",
+            "python": "https://github.com/enhantica/quality/actions/runs/46035480996"
+          },
+          "coverage": {
+            "covered": 19878,
+            "total": 43167,
+            "target": 80
+          },
+          "python": {
+            "covered": 1179,
+            "total": 1679,
+            "target": 80
+          },
+          "checks_scope": {
+            "Clang static analysis": "Linux core, CLI, and bindings compilation database"
+          },
+          "checks_url": "https://github.com/enhantica/quality/actions/runs/46035480996",
+          "coverage_url": "https://github.com/enhantica/quality/actions/runs/46035480996"
         }
       ],
       "releases": [
