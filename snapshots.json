@@ -2075,6 +2075,122 @@
             "coverage": "https://github.com/enhantica/quality/actions/runs/45944307438",
             "python": "https://github.com/enhantica/quality/actions/runs/45944307438"
           }
+        },
+        {
+          "sha": "68eddeb79fac3cdcd3f42f983e4eacd5e84d80de",
+          "date": "2026-11-28T15:59:04.183038+00:00",
+          "static": {
+            "mi": 30.408596644029785,
+            "p90": 9,
+            "p90_cognitive": 11,
+            "p90_length": 32,
+            "p90_arguments": 4,
+            "p90_exits": 3,
+            "files": 239,
+            "functions": 3990,
+            "logical": 36158,
+            "documentation_lines": 735,
+            "components": [
+              {
+                "name": "Engine",
+                "lines": 58190
+              },
+              {
+                "name": "Public headers",
+                "lines": 8756
+              },
+              {
+                "name": "Bindings",
+                "lines": 5473
+              },
+              {
+                "name": "Native CLI",
+                "lines": 1025
+              }
+            ],
+            "hotspots": [
+              {
+                "score": 266,
+                "component": "Engine",
+                "name": "Function in Engine"
+              },
+              {
+                "score": 214,
+                "component": "Bindings",
+                "name": "Function in Bindings"
+              },
+              {
+                "score": 177,
+                "component": "Engine",
+                "name": "Function in Engine"
+              },
+              {
+                "score": 172,
+                "component": "Engine",
+                "name": "Function in Engine"
+              },
+              {
+                "score": 121,
+                "component": "Engine",
+                "name": "Function in Engine"
+              },
+              {
+                "score": 94,
+                "component": "Engine",
+                "name": "Function in Engine"
+              }
+            ]
+          },
+          "python_static": {
+            "mi": 45.85406754166799,
+            "p90": 6,
+            "p90_cognitive": 9,
+            "p90_length": 15,
+            "p90_arguments": 0,
+            "p90_exits": 2,
+            "files": 2,
+            "functions": 2,
+            "logical": 61,
+            "documentation_lines": 41,
+            "components": [
+              {
+                "name": "Python bootstrap",
+                "lines": 81
+              }
+            ],
+            "hotspots": [
+              {
+                "score": 6,
+                "component": "Python bootstrap",
+                "name": "Function in Python bootstrap"
+              },
+              {
+                "score": 3,
+                "component": "Python bootstrap",
+                "name": "Function in Python bootstrap"
+              }
+            ]
+          },
+          "python_docs": {
+            "covered": 2,
+            "total": 2
+          },
+          "docs": {
+            "covered": 316,
+            "total": 3121
+          },
+          "checks": {},
+          "ci_url": null,
+          "coverage_settings": {
+            "coverage": {
+              "target": 80,
+              "line": 278
+            },
+            "python": {
+              "target": 80,
+              "line": 279
+            }
+          }
         }
       ],
       "pins": {
@@ -2606,6 +2722,122 @@
           "coverage_url": "https://github.com/enhantica/quality/actions/runs/44537052188",
           "coverage_sources": {
             "coverage": "https://github.com/enhantica/quality/actions/runs/44537052188"
+          }
+        },
+        "68eddeb79fac3cdcd3f42f983e4eacd5e84d80de": {
+          "sha": "68eddeb79fac3cdcd3f42f983e4eacd5e84d80de",
+          "date": "2026-11-28T15:59:09.104127+00:00",
+          "static": {
+            "mi": 30.408596644029785,
+            "p90": 9,
+            "p90_cognitive": 11,
+            "p90_length": 32,
+            "p90_arguments": 4,
+            "p90_exits": 3,
+            "files": 239,
+            "functions": 3990,
+            "logical": 36158,
+            "documentation_lines": 735,
+            "components": [
+              {
+                "name": "Engine",
+                "lines": 58190
+              },
+              {
+                "name": "Public headers",
+                "lines": 8756
+              },
+              {
+                "name": "Bindings",
+                "lines": 5473
+              },
+              {
+                "name": "Native CLI",
+                "lines": 1025
+              }
+            ],
+            "hotspots": [
+              {
+                "score": 266,
+                "component": "Engine",
+                "name": "Function in Engine"
+              },
+              {
+                "score": 214,
+                "component": "Bindings",
+                "name": "Function in Bindings"
+              },
+              {
+                "score": 177,
+                "component": "Engine",
+                "name": "Function in Engine"
+              },
+              {
+                "score": 172,
+                "component": "Engine",
+                "name": "Function in Engine"
+              },
+              {
+                "score": 121,
+                "component": "Engine",
+                "name": "Function in Engine"
+              },
+              {
+                "score": 94,
+                "component": "Engine",
+                "name": "Function in Engine"
+              }
+            ]
+          },
+          "python_static": {
+            "mi": 45.85406754166799,
+            "p90": 6,
+            "p90_cognitive": 9,
+            "p90_length": 15,
+            "p90_arguments": 0,
+            "p90_exits": 2,
+            "files": 2,
+            "functions": 2,
+            "logical": 61,
+            "documentation_lines": 41,
+            "components": [
+              {
+                "name": "Python bootstrap",
+                "lines": 81
+              }
+            ],
+            "hotspots": [
+              {
+                "score": 6,
+                "component": "Python bootstrap",
+                "name": "Function in Python bootstrap"
+              },
+              {
+                "score": 3,
+                "component": "Python bootstrap",
+                "name": "Function in Python bootstrap"
+              }
+            ]
+          },
+          "python_docs": {
+            "covered": 2,
+            "total": 2
+          },
+          "docs": {
+            "covered": 316,
+            "total": 3121
+          },
+          "checks": {},
+          "ci_url": null,
+          "coverage_settings": {
+            "coverage": {
+              "target": 80,
+              "line": 278
+            },
+            "python": {
+              "target": 80,
+              "line": 279
+            }
           }
         },
         "7121efe84a06e9d6727e0401b2f1c56a80ebeb6d": {
@@ -3524,7 +3756,8 @@
         }
       },
       "pending_measurements": [
-        "57c175cb3d83833567aef9e93da1f8e437a6a9fd"
+        "57c175cb3d83833567aef9e93da1f8e437a6a9fd",
+        "68eddeb79fac3cdcd3f42f983e4eacd5e84d80de"
       ]
     },
     "edi": {
@@ -6293,6 +6526,197 @@
             }
           },
           "crysta_pin": "4b418f93622ad41bc2fba26ff5f8f531ed9ed884"
+        },
+        {
+          "sha": "18b5e8a6f4157afb78cfbdc8dbca6a2062da614b",
+          "date": "2026-11-28T15:59:04.183038+00:00",
+          "static": {
+            "mi": 27.227379700053913,
+            "p90": 15,
+            "p90_cognitive": 17,
+            "p90_length": 33,
+            "p90_arguments": 3,
+            "p90_exits": 5,
+            "files": 298,
+            "functions": 8174,
+            "logical": 102444,
+            "documentation_lines": 1306,
+            "components": [
+              {
+                "name": "Desktop app",
+                "lines": 90114
+              },
+              {
+                "name": "Core & headers",
+                "lines": 47821
+              },
+              {
+                "name": "Bindings",
+                "lines": 5221
+              },
+              {
+                "name": "Assistant native",
+                "lines": 1124
+              },
+              {
+                "name": "Native CLI",
+                "lines": 674
+              }
+            ],
+            "hotspots": [
+              {
+                "score": 674,
+                "component": "Desktop app",
+                "name": "DemoDriver::check_layout",
+                "path": "app/src/demo_driver.cpp",
+                "line": 6253
+              },
+              {
+                "score": 386,
+                "component": "Desktop app",
+                "name": "AssistantWidgetInput::advance",
+                "path": "app/src/assistant_widget_input.cpp",
+                "line": 691
+              },
+              {
+                "score": 378,
+                "component": "Desktop app",
+                "name": "DemoDriver::perform",
+                "path": "app/src/demo_driver.cpp",
+                "line": 4636
+              },
+              {
+                "score": 335,
+                "component": "Desktop app",
+                "name": "generic_response",
+                "path": "app/src/assistant_view_model.cpp",
+                "line": 15380
+              },
+              {
+                "score": 315,
+                "component": "Desktop app",
+                "name": "DemoDriver::next_action",
+                "path": "app/src/demo_driver.cpp",
+                "line": 3499
+              },
+              {
+                "score": 290,
+                "component": "Desktop app",
+                "name": "DemoDriver::DemoDriver",
+                "path": "app/src/demo_driver.cpp",
+                "line": 135
+              }
+            ]
+          },
+          "python_static": {
+            "mi": 20.770708609286174,
+            "p90": 8,
+            "p90_cognitive": 9,
+            "p90_length": 26,
+            "p90_arguments": 4,
+            "p90_exits": 3,
+            "files": 8,
+            "functions": 207,
+            "logical": 1517,
+            "documentation_lines": 726,
+            "components": [
+              {
+                "name": "Python package",
+                "lines": 2961
+              },
+              {
+                "name": "Python import alias",
+                "lines": 3
+              }
+            ],
+            "hotspots": [
+              {
+                "score": 18,
+                "component": "Python package",
+                "name": "run_calc",
+                "path": "lib/edi/__main__.py",
+                "line": 847
+              },
+              {
+                "score": 14,
+                "component": "Python package",
+                "name": "from_dict",
+                "path": "lib/edi/__init__.py",
+                "line": 1328
+              },
+              {
+                "score": 14,
+                "component": "Python package",
+                "name": "assert_patterns_agree",
+                "path": "lib/edi/verification.py",
+                "line": 818
+              },
+              {
+                "score": 13,
+                "component": "Python package",
+                "name": "main",
+                "path": "lib/edi/__main__.py",
+                "line": 1033
+              },
+              {
+                "score": 12,
+                "component": "Python package",
+                "name": "fit",
+                "path": "lib/edi/__init__.py",
+                "line": 599
+              },
+              {
+                "score": 12,
+                "component": "Python package",
+                "name": "from_scratch",
+                "path": "lib/edi/__init__.py",
+                "line": 1624
+              }
+            ]
+          },
+          "python_docs": {
+            "covered": 91,
+            "total": 130
+          },
+          "docs": {
+            "covered": 466,
+            "total": 3463
+          },
+          "checks": {
+            "Clang static analysis": "Passed",
+            "Ruff": "Passed"
+          },
+          "ci_url": null,
+          "coverage_settings": {
+            "coverage": {
+              "target": 80,
+              "line": 137
+            },
+            "python": {
+              "target": 80,
+              "line": 132
+            }
+          },
+          "crysta_pin": "68eddeb79fac3cdcd3f42f983e4eacd5e84d80de",
+          "coverage_sources": {
+            "coverage": "https://github.com/enhantica/quality/actions/runs/46160307334",
+            "python": "https://github.com/enhantica/quality/actions/runs/46160307334"
+          },
+          "coverage": {
+            "covered": 19908,
+            "total": 43297,
+            "target": 80
+          },
+          "python": {
+            "covered": 1179,
+            "total": 1679,
+            "target": 80
+          },
+          "checks_scope": {
+            "Clang static analysis": "Linux core, CLI, and bindings compilation database"
+          },
+          "checks_url": "https://github.com/enhantica/quality/actions/runs/46160307334",
+          "coverage_url": "https://github.com/enhantica/quality/actions/runs/46160307334"
         }
       ],
       "releases": [
