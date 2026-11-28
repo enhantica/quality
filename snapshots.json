@@ -1938,7 +1938,7 @@
         },
         {
           "sha": "4b418f93622ad41bc2fba26ff5f8f531ed9ed884",
-          "date": "2026-11-28T08:07:11.490063+00:00",
+          "date": "2026-11-28T08:56:47.506705+00:00",
           "static": {
             "mi": 30.408596644029785,
             "p90": 9,
@@ -6122,7 +6122,7 @@
         },
         {
           "sha": "212509209e8914c22f7cde3bcc243dd014c80739",
-          "date": "2026-11-28T08:07:11.490063+00:00",
+          "date": "2026-11-28T08:56:47.506705+00:00",
           "static": {
             "mi": 27.06180618392603,
             "p90": 15,
@@ -9423,8 +9423,8 @@
               "total": 3460
             },
             "checks": {
-              "Clang static analysis": "Cancelled",
-              "Ruff": "Cancelled",
+              "Clang static analysis": "Passed",
+              "Ruff": "Passed",
               "Sanitizer tests": "Cancelled",
               "Docs build": "Cancelled"
             },
@@ -9439,7 +9439,26 @@
                 "line": 132
               }
             },
-            "crysta_pin": "4b418f93622ad41bc2fba26ff5f8f531ed9ed884"
+            "crysta_pin": "4b418f93622ad41bc2fba26ff5f8f531ed9ed884",
+            "coverage_sources": {
+              "coverage": "https://github.com/enhantica/quality/actions/runs/46124373555",
+              "python": "https://github.com/enhantica/quality/actions/runs/46124373555"
+            },
+            "coverage": {
+              "covered": 19878,
+              "total": 43167,
+              "target": 80
+            },
+            "python": {
+              "covered": 1179,
+              "total": 1679,
+              "target": 80
+            },
+            "checks_scope": {
+              "Clang static analysis": "Linux core, CLI, and bindings compilation database"
+            },
+            "checks_url": "https://github.com/enhantica/quality/actions/runs/46124373555",
+            "coverage_url": "https://github.com/enhantica/quality/actions/runs/46124373555"
           }
         }
       ]
